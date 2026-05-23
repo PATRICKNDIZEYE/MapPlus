@@ -1,4 +1,4 @@
-import { TenantSidebar } from '@/components/admin/TenantSidebar';
+import { TenantSidebar } from '@/components/mall/TenantSidebar';
 
 export default function TenantLayout({ children }: { children: React.ReactNode }) {
   return (

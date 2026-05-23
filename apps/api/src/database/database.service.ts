@@ -2,7 +2,7 @@ import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/commo
 import { ConfigService } from '@nestjs/config';
 import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import * as schema from '@mapplus/shared';
+import * as schema from '@mallguide/shared';
 
 export type DrizzleDB = NodePgDatabase<typeof schema>;
 

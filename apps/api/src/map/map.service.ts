@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { eq, and, sql } from 'drizzle-orm';
 import { DatabaseService } from '../database/database.service';
-import { floors, units, shopProfiles, amenities, mapVersions, navNodes } from '@mapplus/shared';
-import type { FloorMapGeoJSON } from '@mapplus/shared';
+import { floors, units, shopProfiles, amenities, mapVersions, navNodes } from '@mallguide/shared';
+import type { FloorMapGeoJSON } from '@mallguide/shared';
 
 @Injectable()
 export class MapService {
@@ -16,26 +16,34 @@ export class MapService {
     const [floor] = await this.db.db.select().from(floors).where(eq(floors.id, floorId)).limit(1);
     if (!floor) throw new NotFoundException(`Floor ${floorId} not found`);
 
-    // Units with their geometry and linked shop info
+    // Units with their geometry and linked shop / tenant info
     const unitRows = await this.db.rawPool.query<{
       id: string;
       unit_code: string;
       unit_name: string | null;
       status: string;
       floor_id: string;
+      area_sqm: string | null;
+      tenant_id: string | null;
       geojson: string;
       shop_id: string | null;
       shop_name: string | null;
       category: string | null;
+      logo_url: string | null;
       is_published: boolean;
+      monthly_rent: string | null;
+      tenant_trade_name: string | null;
     }>(
       `SELECT
         u.id, u.unit_code, u.unit_name, u.status, u.floor_id,
+        u.area_sqm, u.tenant_id,
         ST_AsGeoJSON(u.geometry)::json as geojson,
         s.id as shop_id, s.public_name as shop_name,
-        s.category, s.is_published
+        s.category, s.logo_url, s.is_published,
+        t.monthly_rent, t.trade_name as tenant_trade_name
        FROM units u
        LEFT JOIN shop_profiles s ON s.unit_id = u.id AND s.is_published = true
+       LEFT JOIN tenants t ON t.id = u.tenant_id
        WHERE u.floor_id = $1 AND u.visibility = true`,
       [floorId],
     );
@@ -79,6 +87,8 @@ export class MapService {
       floorNumber: floor.floorNumber,
       floorName: floor.name,
       version: version?.versionString ?? 'draft',
+      pricePerSqm: floor.pricePerSqm ? Number(floor.pricePerSqm) : null,
+      currency: floor.currency ?? 'RWF',
       units: {
         type: 'FeatureCollection',
         features: unitRows.rows.map((row) => ({
@@ -93,6 +103,11 @@ export class MapService {
             shopId: row.shop_id,
             shopName: row.shop_name,
             category: row.category,
+            logoUrl: row.logo_url,
+            areaSqm: row.area_sqm ? Number(row.area_sqm) : null,
+            tenantId: row.tenant_id,
+            monthlyRent: row.monthly_rent ? Number(row.monthly_rent) : null,
+            tenantTradeName: row.tenant_trade_name,
             isPublished: row.is_published ?? false,
           },
         })),

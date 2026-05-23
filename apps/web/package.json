@@ -1,5 +1,5 @@
 {
-  "name": "@mapplus/web",
+  "name": "@mallguide/web",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -10,8 +10,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@mapplus/api": "workspace:*",
-    "@mapplus/shared": "workspace:*",
+    "@mallguide/api": "workspace:*",
+    "@mallguide/shared": "workspace:*",
     "@tanstack/react-query": "^5.50.0",
     "@trpc/client": "^11.0.0",
     "@trpc/react-query": "^11.0.0",
@@ -20,6 +20,7 @@
     "lucide-react": "^1.16.0",
     "maplibre-gl": "^4.5.0",
     "next": "14.2.5",
+    "next-intl": "^4.12.0",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
     "zod": "^3.23.0",

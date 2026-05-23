@@ -1,10 +1,10 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
+import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import { router, protectedProcedure } from '../trpc/trpc.init';
 import { MediaService } from './media.service';
 import { DatabaseService } from '../database/database.service';
-import { shopProfiles } from '@mapplus/shared';
+import { shopProfiles, products } from '@mallguide/shared';
 
 @Injectable()
 export class MediaRouter {
@@ -61,6 +61,35 @@ export class MediaRouter {
           // Delete the old file asynchronously (don't block the response)
           void this.media.deleteFile(oldUrl ?? null);
 
+          return { url };
+        }),
+
+      /**
+       * Upload a product image. Returns the public URL — caller is responsible
+       * for attaching it to the product (via products.update with the new images
+       * array) so the tenant UI can preview before committing.
+       */
+      uploadProductImage: protectedProcedure
+        .input(z.object({
+          productId:  z.string().uuid(),
+          fileBase64: z.string().min(100),
+          mimeType:   z.enum(['image/jpeg', 'image/jpg', 'image/png', 'image/webp']),
+        }))
+        .mutation(async ({ input, ctx }) => {
+          const [product] = await this.db.db
+            .select({ id: products.id, tenantId: products.tenantId, shopId: products.shopId })
+            .from(products)
+            .where(eq(products.id, input.productId))
+            .limit(1);
+
+          if (!product) throw new NotFoundException('Product not found');
+
+          const adminRoles = ['super_admin', 'org_owner', 'building_manager'];
+          if (!adminRoles.includes(ctx.user!.role) && ctx.user!.tenantId !== product.tenantId) {
+            throw new ForbiddenException('You do not own this product');
+          }
+
+          const url = await this.media.saveFile(input.fileBase64, input.mimeType, 'product');
           return { url };
         }),
     });

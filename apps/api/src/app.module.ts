@@ -8,6 +8,9 @@ import { ConfigModule } from '@nestjs/config';
 import configuration from './config/configuration';
 import { DatabaseModule } from './database/database.module';
 import { MediaModule } from './media/media.module';
+import { AuthModule } from './auth/auth.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { PaymentsModule } from './payments/payments.module';
 import { TrpcModule } from './trpc/trpc.module';
 import { TrpcMiddleware } from './trpc/trpc.middleware';
 
@@ -25,7 +28,10 @@ import { TrpcMiddleware } from './trpc/trpc.middleware';
       ],
     }),
     DatabaseModule,
+    AuthModule,
     MediaModule,
+    NotificationsModule,
+    PaymentsModule,
     TrpcModule,
   ],
 })

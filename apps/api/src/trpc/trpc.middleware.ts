@@ -1,17 +1,27 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import type { Request, Response, NextFunction } from 'express';
 import { createExpressMiddleware } from '@trpc/server/adapters/express';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { TrpcRouter } from './trpc.router';
-import { createTrpcContext } from './trpc.context';
+import { createTrpcContextFactory } from './trpc.context';
 
 @Injectable()
 export class TrpcMiddleware implements NestMiddleware {
-  constructor(private trpcRouter: TrpcRouter) {}
+  private readonly createContext: ReturnType<typeof createTrpcContextFactory>;
+
+  constructor(
+    private trpcRouter: TrpcRouter,
+    jwt: JwtService,
+    config: ConfigService,
+  ) {
+    this.createContext = createTrpcContextFactory({ jwt, config });
+  }
 
   use(req: Request, res: Response, next: NextFunction) {
     return createExpressMiddleware({
       router: this.trpcRouter.appRouter,
-      createContext: ({ req, res }) => createTrpcContext({ req, res }),
+      createContext: ({ req, res }) => this.createContext({ req, res }),
       onError:
         process.env['NODE_ENV'] !== 'production'
           ? ({ path, error }) => {

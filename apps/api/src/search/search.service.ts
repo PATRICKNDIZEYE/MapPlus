@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
-import { analyticsEvents } from '@mapplus/shared';
+import { analyticsEvents } from '@mallguide/shared';
 
 export interface SearchResult {
   shopId: string;

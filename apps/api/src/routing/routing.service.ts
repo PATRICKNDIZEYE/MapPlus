@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { DatabaseService } from '../database/database.service';
-import { navNodes, navEdges, qrAnchors } from '@mapplus/shared';
-import type { Route, RouteStep } from '@mapplus/shared';
+import { navNodes, navEdges, qrAnchors } from '@mallguide/shared';
+import type { Route, RouteStep } from '@mallguide/shared';
 
 interface GraphNode {
   id: string;

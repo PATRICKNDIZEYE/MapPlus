@@ -77,3 +77,9 @@ h1, h2, h3, h4, h5, h6 {
     @apply inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full;
   }
 }
+
+/* ── Hero fade-up keyframes (used by HeroProductFan cards) ── */
+@keyframes fadeUp {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}

@@ -13,6 +13,8 @@ export const floors = pgTable(
     shortName: varchar('short_name', { length: 20 }),
     floorPlanUrl: text('floor_plan_url'),
     elevationM: numeric('elevation_m', { precision: 6, scale: 2 }),
+    pricePerSqm: numeric('price_per_sqm', { precision: 12, scale: 2 }),
+    currency: varchar('currency', { length: 3 }).notNull().default('RWF'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },

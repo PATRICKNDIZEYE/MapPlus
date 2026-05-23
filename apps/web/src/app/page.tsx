@@ -1,493 +1,385 @@
 import Link from 'next/link';
 import {
-  Map, Search, QrCode, BarChart3, Building2, Navigation,
-  Users, Shield, ArrowRight, CheckCircle2,
-  Store, LayoutDashboard, MapPin, ScanLine, Download,
+  ArrowRight, ArrowUpRight,
 } from 'lucide-react';
+import { SiteFooter } from '@/components/marketing/SiteFooter';
+import { Logo } from '@/components/brand/Logo';
+import { PropertyDashboard } from '@/components/marketing/PropertyDashboard';
+import { HeroProductFan } from '@/components/marketing/HeroProductFan';
 
-// ── Page data ─────────────────────────────────────────────────────────────────
-
-const FEATURES = [
-  {
-    icon: Map,
-    title: 'Interactive floor maps',
-    desc: 'PostGIS-backed unit polygons rendered with MapLibre GL JS. Every unit is a clickable entity with status, tenant, and spatial geometry.',
-  },
-  {
-    icon: Search,
-    title: 'Full-text search',
-    desc: 'PostgreSQL FTS with pg_trgm fuzzy matching. Finds any shop, brand, or product in under 300 ms across all floors simultaneously.',
-  },
-  {
-    icon: QrCode,
-    title: 'QR-anchored navigation',
-    desc: 'No GPS required. Visitors scan a QR code at any entrance and receive an exact position with turn-by-turn indoor routing.',
-  },
-  {
-    icon: BarChart3,
-    title: 'Building analytics',
-    desc: 'Visitor heatmaps, search demand signals, and tenant performance data. Failed searches surface vacant unit leasing opportunities in real time.',
-  },
-  {
-    icon: Store,
-    title: 'Tenant self-service',
-    desc: 'Each tenant manages their own profile, operating hours, and product listings without requiring admin intervention.',
-  },
-  {
-    icon: Shield,
-    title: 'Role-based access',
-    desc: 'Five permission levels from super admin to tenant staff. Every sensitive action is audit-logged with actor, entity, and timestamp.',
-  },
+const NAV = [
+  { label: 'Product',   href: '#product'  },
+  { label: 'Pilot',     href: '#pilot'    },
+  { label: 'Process',   href: '#process'  },
+  { label: 'Audiences', href: '#audiences'},
 ];
 
-const STEPS = [
+const PRINCIPLES = [
   {
     n: '01',
-    icon: Building2,
-    title: 'Digitise the building',
-    desc: 'We collect floor plans in any format — CAD, PDF, or physical walkthrough — and digitise every unit as a PostGIS polygon. Delivered in 5–10 business days.',
-    meta: 'Field team + GIS specialist',
+    title: 'Real polygons, not pins',
+    body:
+      'Every unit is its own PostGIS polygon — actual shape, actual area, actual neighbour. No pins floating on top of a street map borrowed from elsewhere.',
   },
   {
     n: '02',
-    icon: Users,
-    title: 'Onboard tenants',
-    desc: 'Each tenant receives a login to manage their shop profile, hours, and product listings without requiring admin support.',
-    meta: 'Self-service per tenant',
+    title: 'Search the inside',
+    body:
+      'Type a brand, a product, or a category. Postgres full-text plus trigram fuzzy match returns ranked results across every floor in roughly 300 milliseconds.',
   },
   {
     n: '03',
-    icon: ScanLine,
-    title: 'Deploy QR codes',
-    desc: 'Printable QR codes for every entrance, elevator, and key corridor. Visitors navigate without installing an app.',
-    meta: 'Print-ready in minutes',
+    title: 'QR is the GPS',
+    body:
+      'GPS dies indoors. We print a few dozen weatherproof codes at entrances and elevators. Visitors open the camera and the map snaps to a precise anchor.',
+  },
+  {
+    n: '04',
+    title: 'Demand is the asset',
+    body:
+      'Search misses, click density, and floor traffic become a live signal. Owners see which categories to lease next — not just which units happen to be empty.',
   },
 ];
 
-const USE_CASES = [
+const PROCESS = [
+  {
+    n: '01',
+    title: 'Digitise the building',
+    body:
+      'Hand us a floor plan in any format. We turn it into PostGIS geometry — one polygon per unit, plus corridors, amenities, anchor points, and parking. Five to ten business days.',
+  },
+  {
+    n: '02',
+    title: 'Onboard the tenants',
+    body:
+      'Every tenant gets a login. They write their own profile, set their own hours, upload their own photos. You spend zero time on data entry.',
+  },
+  {
+    n: '03',
+    title: 'Print the QR codes',
+    body:
+      'A small batch of waterproof codes at entrances, elevators, and corridor junctions. No app to install — the visitor opens the phone camera and they are inside the map.',
+  },
+];
+
+const AUDIENCES = [
   {
     role: 'Visitors',
-    icon: Navigation,
-    sub: 'Public web app · No installation required',
+    sub:  'Public web · No login',
     items: [
-      'Find any shop by name, brand, or product category',
-      'Scan a QR code to anchor position and get directions',
-      'Filter by floor, category, or operating hours',
-      'Works offline after the first map load',
-      'Report wrong or outdated shop information',
+      'Search any shop by name, brand, or category',
+      'Scan a QR to drop a precise "you are here" anchor',
+      'Filter by floor or operating hours',
+      'Cached after first load — works in the elevator',
     ],
   },
   {
-    role: 'Building managers',
-    icon: LayoutDashboard,
-    sub: 'Admin dashboard · Role-based access control',
+    role: 'Owners',
+    sub:  'Admin console · Role-based',
     items: [
-      'Real-time floor occupancy across all units',
-      'Failed-search reports reveal unsatisfied tenant demand',
-      'Tenant management with lease and contact records',
-      'Map versioning: draft, publish, and archive',
-      'QR anchor management and printable codes',
+      'Live floor occupancy and revenue per square metre',
+      'Failed-search log — demand you are not yet meeting',
+      'Tenant records with lease, contact, monthly rent',
+      'Map versioning: draft, publish, archive',
     ],
   },
   {
     role: 'Tenants',
-    icon: Store,
-    sub: 'Tenant portal · Fully self-managed',
+    sub:  'Self-serve portal',
     items: [
-      'Edit shop name, description, and category',
-      'Upload logo, cover photo, and product images',
-      'Configure operating hours per day of week',
-      'View profile visits, direction requests, and call clicks',
-      'Manage product and services catalogue',
+      'Edit shop name, description, and hours',
+      'Upload cover photo and logo',
+      'Track profile views, direction taps, call-throughs',
+      'Manage product and service listings',
     ],
   },
 ];
 
-// ── Component ─────────────────────────────────────────────────────────────────
+const PILOT = [
+  ['Building',        'CHIC Kigali · 5 floors · 132 × 32 m'],
+  ['Unit polygons',   '890'],
+  ['Occupied units',  '530 (60%)'],
+  ['Search latency',  '~300 ms p95'],
+  ['Roles defined',   '5 (super admin → tenant staff)'],
+  ['Photos seeded',   '12 / 13 verified shops'],
+];
 
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-white font-jakarta text-ink-900">
 
-      {/* ── Navigation ── */}
-      <header className="fixed inset-x-0 top-0 z-50 bg-white border-b border-ink-200 h-14">
-        <div className="max-w-6xl mx-auto px-6 h-full flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Map className="w-5 h-5 text-primary-600" strokeWidth={2.5} />
-            <span className="text-base font-bold tracking-tight">Map+</span>
-          </div>
-
-          <nav className="hidden md:flex items-center">
-            {[
-              ['Features',     '#features'],
-              ['How it works', '#how'],
-              ['Use cases',    '#use'],
-            ].map(([label, href]) => (
-              <Link key={href} href={href}
-                className="px-3 py-1.5 text-sm text-ink-500 hover:text-ink-900 hover:bg-ink-50 rounded-md transition-colors font-medium">
-                {label}
+      {/* ── Floating header (over the sky gradient, becomes solid on scroll) ── */}
+      <header className="absolute top-0 inset-x-0 z-40 h-16">
+        <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
+          <Logo size="sm" tone="light" />
+          <nav className="hidden md:flex items-center text-[13px] font-medium">
+            {NAV.map((item) => (
+              <Link key={item.href} href={item.href}
+                className="px-3 py-1.5 text-white/70 hover:text-white transition-colors">
+                {item.label}
               </Link>
             ))}
           </nav>
-
           <div className="flex items-center gap-2">
-            <Link href="/admin" className="btn-secondary text-xs py-1.5">
-              Admin demo
+            <Link href="/login" className="text-xs font-semibold text-white/80 hover:text-white px-3 py-1.5">
+              Sign in
             </Link>
-            <Link href="/map/chic-kigali" className="btn-primary text-xs py-1.5">
-              Open map <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
+            <a href="mailto:hello@impactmel.com?subject=mallGuide%20pilot%20enquiry"
+               className="inline-flex items-center gap-1.5 bg-white text-ink-900 hover:bg-white/90 transition-colors text-xs font-semibold px-4 py-2 rounded-full shadow-sm">
+              Book a call
+            </a>
           </div>
         </div>
       </header>
 
-      {/* ── Hero ── */}
-      <section className="pt-28 pb-20 px-6">
-        <div className="max-w-6xl mx-auto">
+      {/* ── Hero — sky gradient with floating product cards ── */}
+      <section className="relative overflow-hidden">
 
-          {/* Copy */}
-          <div className="max-w-2xl mb-14">
-            <div className="inline-flex items-center gap-2 bg-ink-50 border border-ink-200 text-ink-500 text-xs font-semibold px-3 py-1.5 rounded-full mb-8">
-              <span className="w-1.5 h-1.5 rounded-full bg-success-DEFAULT" />
-              Live pilot — CHIC Kigali, Rwanda
-            </div>
+        {/* Indigo gradient base */}
+        <div aria-hidden className="absolute inset-0"
+          style={{
+            background:
+              'linear-gradient(180deg, #1A0030 0%, #28004A 30%, #4B0082 60%, #8A4FB8 85%, #E5D1F3 100%)',
+          }}
+        />
 
-            <h1 className="text-5xl sm:text-6xl font-extrabold tracking-tighter leading-[1.06] mb-6">
-              The operating system<br />for large commercial buildings.
+        {/* Atmospheric mist (low-altitude clouds) — soft elliptical glow at the bottom */}
+        <div aria-hidden className="absolute inset-x-0 bottom-0 h-2/3 pointer-events-none"
+          style={{
+            background:
+              'radial-gradient(ellipse 70% 55% at 50% 100%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.15) 35%, transparent 70%)',
+          }}
+        />
+
+        {/* Sun-rays / haze (very subtle horizontal stripes high up) */}
+        <div aria-hidden className="absolute inset-0 pointer-events-none opacity-30"
+          style={{
+            background:
+              'radial-gradient(ellipse 90% 30% at 50% 0%, rgba(255,255,255,0.18) 0%, transparent 60%)',
+          }}
+        />
+
+        {/* Vignette top corners */}
+        <div aria-hidden className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              'radial-gradient(ellipse 60% 40% at 0% 0%, rgba(0,0,0,0.28) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 100% 0%, rgba(0,0,0,0.28) 0%, transparent 60%)',
+          }}
+        />
+
+        <div className="relative pt-32 pb-12 px-6">
+          <div className="max-w-5xl mx-auto text-center">
+
+            <h1 className="text-white text-[44px] sm:text-[64px] lg:text-[88px] xl:text-[96px] font-extrabold tracking-tighter leading-[0.96]">
+              Mapping the inside
+              <br />
+              of every commercial building.
             </h1>
 
-            <p className="text-lg text-ink-500 leading-relaxed mb-10 max-w-xl">
-              Map+ turns building floor plans into searchable, navigable digital platforms.
-              Visitors find what they need in seconds. Owners get the intelligence to manage and grow.
+            <p className="mt-6 text-white/80 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+              mallGuide digitises floor plans into searchable, navigable, leaseable digital products.
+              <br className="hidden sm:inline" />
+              One mall in production. Three more under contract.
             </p>
 
-            <div className="flex items-center gap-3 flex-wrap">
-              <Link href="/map/chic-kigali" className="btn-primary text-base px-5 py-2.5">
-                Explore live demo
-                <ArrowRight className="w-4 h-4" />
+            <div className="mt-9 flex items-center justify-center gap-3 flex-wrap">
+              <Link href="/map/chic-kigali"
+                className="inline-flex items-center gap-2 bg-gradient-to-b from-primary-500 to-primary-700 hover:from-primary-400 hover:to-primary-600 text-white font-semibold text-sm px-5 py-3 rounded-full shadow-[0_8px_24px_-6px_rgba(75,0,130,0.55)] transition-colors">
+                Explore the live map <ArrowRight className="w-4 h-4" />
               </Link>
-              <Link href="/admin" className="btn-secondary text-base px-5 py-2.5">
-                <LayoutDashboard className="w-4 h-4" />
-                Admin dashboard
-              </Link>
+              <a href="mailto:hello@impactmel.com?subject=mallGuide%20pilot%20enquiry"
+                className="inline-flex items-center gap-2 bg-white/15 hover:bg-white/25 backdrop-blur border border-white/25 text-white font-semibold text-sm px-5 py-3 rounded-full transition-colors">
+                Book a call
+              </a>
             </div>
+
+            {/* Proof line */}
+            <p className="mt-10 inline-block text-[11px] font-mono uppercase tracking-[0.22em] text-white/55">
+              <span className="text-white/75">Pilot live</span> · CHIC Kigali · 890 units · ~300 ms search
+            </p>
           </div>
 
-          {/* Product mockup */}
-          <div className="rounded-xl border border-ink-200 shadow-lg overflow-hidden bg-white">
-
-            {/* Browser chrome */}
-            <div className="flex items-center gap-1.5 px-4 h-9 bg-ink-50 border-b border-ink-200">
-              <div className="w-2.5 h-2.5 rounded-full bg-ink-200" />
-              <div className="w-2.5 h-2.5 rounded-full bg-ink-200" />
-              <div className="w-2.5 h-2.5 rounded-full bg-ink-200" />
-              <div className="ml-3 flex items-center gap-1.5 bg-white border border-ink-200 rounded px-2.5 py-1 text-[11px] text-ink-400 font-medium">
-                <MapPin className="w-2.5 h-2.5 flex-shrink-0" />
-                <span className="truncate">map.plus/map/chic-kigali</span>
-              </div>
-            </div>
-
-            {/* App layout */}
-            <div className="flex h-[300px]">
-
-              {/* Shop list sidebar */}
-              <div className="w-52 border-r border-ink-100 flex flex-col flex-shrink-0 bg-white">
-                <div className="px-3 py-2.5 border-b border-ink-100">
-                  <div className="flex items-center gap-1.5 bg-ink-50 border border-ink-200 rounded-md px-2.5 py-1.5">
-                    <Search className="w-3 h-3 text-ink-400 flex-shrink-0" strokeWidth={2} />
-                    <span className="text-[11px] text-ink-400 font-medium">Search shops, brands…</span>
-                  </div>
-                  <div className="flex gap-1 mt-2">
-                    {['G', 'L1', 'L2'].map((f, i) => (
-                      <div key={f}
-                        className={`flex-1 py-1 rounded text-[10px] font-bold text-center
-                          ${i === 0 ? 'bg-ink-900 text-white' : 'bg-ink-50 text-ink-500'}`}>
-                        {f}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="overflow-y-auto flex-1 divide-y divide-ink-50">
-                  {[
-                    ['KFC CHIC',         'Food & Beverages',  true ],
-                    ['iStore Rwanda',    'Electronics',       false],
-                    ['Royal Pharmacy',   'Health',            false],
-                    ['Nakumatt Fashion', 'Fashion',           false],
-                    ['Planet Fitness',   'Fitness',           false],
-                    ['Cinemax Cinema',   'Entertainment',     false],
-                  ].map(([name, cat, active]) => (
-                    <div key={String(name)}
-                      className={`flex items-start gap-2 px-3 py-2.5
-                        ${active ? 'bg-primary-50 border-l-2 border-l-primary-600' : ''}`}>
-                      <div className={`w-6 h-6 rounded flex items-center justify-center flex-shrink-0 mt-0.5
-                        ${active ? 'bg-primary-100' : 'bg-ink-100'}`}>
-                        <Store className={`w-3 h-3 ${active ? 'text-primary-600' : 'text-ink-400'}`} strokeWidth={2} />
-                      </div>
-                      <div className="min-w-0">
-                        <p className={`text-[11px] font-semibold truncate
-                          ${active ? 'text-primary-700' : 'text-ink-800'}`}>
-                          {String(name)}
-                        </p>
-                        <p className="text-[10px] text-ink-400 truncate">{String(cat)}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Map area */}
-              <div className="flex-1 bg-[#f1f4f8] relative overflow-hidden">
-                {/* Grid background */}
-                <div className="absolute inset-0 opacity-30"
-                  style={{
-                    backgroundImage:
-                      'linear-gradient(#d1d5db 1px, transparent 1px), linear-gradient(90deg, #d1d5db 1px, transparent 1px)',
-                    backgroundSize: '28px 28px',
-                  }}
-                />
-
-                {/* Unit polygons */}
-                <div className="absolute inset-5 grid grid-cols-4 grid-rows-3 gap-2">
-                  {[
-                    { l: 'KFC CHIC',         span: 'col-span-1', active: true  },
-                    { l: 'Simba Sports',                          active: false },
-                    { l: 'Pharmacy',                              active: false },
-                    { l: 'Airtel',                                active: false },
-                    { l: 'iStore Rwanda',    span: 'col-span-2',  active: false },
-                    { l: 'Dove Beauty',                           active: false },
-                    { l: 'Vacant',                                vacant: true  },
-                    { l: 'Samsung',          span: 'col-span-2',  active: false },
-                    { l: 'Book Cafe',                             active: false },
-                    { l: 'Vacant',                                vacant: true  },
-                  ].map((u, i) => (
-                    <div key={i}
-                      className={`${u.span ?? ''} rounded-lg border-2 flex items-center justify-center p-1
-                        ${u.active
-                          ? 'bg-primary-50 border-primary-300 ring-1 ring-primary-200'
-                          : u.vacant
-                          ? 'bg-white border-dashed border-ink-200'
-                          : 'bg-white border-ink-200'}`}>
-                      <p className={`text-[9px] font-bold text-center leading-tight
-                        ${u.active ? 'text-primary-700' : u.vacant ? 'text-ink-300' : 'text-ink-600'}`}>
-                        {u.l}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Floor selector */}
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex flex-col gap-1">
-                  {['L2', 'L1', 'G'].map((l, i) => (
-                    <div key={l}
-                      className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold
-                        border shadow-xs
-                        ${i === 2
-                          ? 'bg-ink-900 text-white border-transparent'
-                          : 'bg-white text-ink-600 border-ink-200'}`}>
-                      {l}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Selected shop row */}
-            <div className="border-t border-ink-100 px-5 py-3 flex items-center gap-4 bg-white">
-              <div className="w-8 h-8 rounded-lg bg-ink-100 flex items-center justify-center flex-shrink-0">
-                <Store className="w-4 h-4 text-ink-500" strokeWidth={2} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-ink-900">KFC CHIC</p>
-                <p className="text-xs text-ink-400">Ground Floor · Unit G-A04 · Open until 21:00</p>
-              </div>
-              <button className="btn-primary text-xs py-1 px-3">
-                <Navigation className="w-3 h-3" /> Directions
-              </button>
-            </div>
+          {/* Floating glass card fan */}
+          <div className="relative mt-12 sm:mt-20">
+            <HeroProductFan />
           </div>
         </div>
       </section>
 
-      {/* ── Pilot stats bar ── */}
-      <section className="py-10 px-6 bg-ink-50 border-y border-ink-200">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-          <div>
-            <p className="text-[11px] font-semibold text-ink-400 uppercase tracking-widest mb-1">
-              Pilot deployment
-            </p>
-            <p className="text-base font-bold text-ink-900">CHIC Kigali — KG 9 Ave, Kacyiru</p>
-            <p className="text-sm text-ink-500 mt-0.5">
-              3 floors · 13 verified shops · 6 amenity types · QR anchors installed
+      {/* ── Pilot / spec table ── */}
+      <section id="pilot" className="border-b border-ink-100">
+        <div className="max-w-6xl mx-auto px-6 py-20 grid grid-cols-1 lg:grid-cols-12 gap-10">
+          <div className="lg:col-span-4">
+            <SectionLabel n="01" label="Pilot deployment" />
+            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tighter mt-4 leading-[1.05]">
+              Already running in
+              <br />a real building.
+            </h2>
+            <p className="text-ink-500 text-sm leading-relaxed mt-4 max-w-sm">
+              CHIC Kigali is the launch site — a five-floor commercial centre in downtown Kigali.
+              The numbers below are real and queried directly from the production database.
             </p>
           </div>
-          <div className="flex items-center gap-8 text-center flex-shrink-0">
-            {[
-              ['13',    'Shops'],
-              ['3',     'Floors'],
-              ['< 1 s', 'Search'],
-              ['99.9%', 'Uptime'],
-            ].map(([v, l]) => (
-              <div key={l}>
-                <p className="text-2xl font-extrabold text-ink-900 tracking-tight">{v}</p>
-                <p className="text-xs text-ink-400 font-medium mt-0.5">{l}</p>
+
+          <div className="lg:col-span-8">
+            <dl className="divide-y divide-ink-100 border-y border-ink-100">
+              {PILOT.map(([label, value]) => (
+                <div key={label} className="flex items-baseline justify-between py-4 gap-6">
+                  <dt className="text-[11px] font-mono uppercase tracking-[0.18em] text-ink-400">{label}</dt>
+                  <dd className="text-base font-bold text-ink-900 tabular-nums text-right">{value}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Owner console preview ── */}
+      <section className="border-b border-ink-100 bg-ink-900 text-white">
+        <div className="max-w-6xl mx-auto px-6 py-20">
+          <div className="max-w-2xl mb-10">
+            <SectionLabel n="02" label="What owners see" tone="dark" />
+            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tighter mt-4 leading-[1.05]">
+              The building, on one screen.
+            </h2>
+            <p className="text-ink-300 text-base leading-relaxed mt-3">
+              Live floor plan, lease status per unit, demand signals from failed searches,
+              and a tenant audit feed — all wired to the same database.
+            </p>
+          </div>
+          <PropertyDashboard />
+        </div>
+      </section>
+
+      {/* ── Principles ── */}
+      <section id="product" className="border-b border-ink-100 bg-ink-50/50">
+        <div className="max-w-6xl mx-auto px-6 py-20 grid grid-cols-1 lg:grid-cols-12 gap-10">
+          <div className="lg:col-span-4 lg:sticky lg:top-24 self-start">
+            <SectionLabel n="03" label="What we believe" />
+            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tighter mt-4 leading-[1.05]">
+              Four ideas
+              <br />we will not negotiate.
+            </h2>
+            <p className="text-ink-500 text-sm leading-relaxed mt-4 max-w-sm">
+              Most indoor-mapping products are pins on top of Google Maps. We are not that.
+              mallGuide is opinionated about a small number of things.
+            </p>
+          </div>
+
+          <ol className="lg:col-span-8 space-y-px bg-ink-100 border border-ink-100 rounded-2xl overflow-hidden">
+            {PRINCIPLES.map((p) => (
+              <li key={p.n} className="bg-white p-7 grid grid-cols-[auto_1fr] gap-6">
+                <span className="text-2xl font-extrabold text-ink-300 tabular-nums tracking-tight">
+                  {p.n}
+                </span>
+                <div>
+                  <h3 className="text-base font-bold text-ink-900 tracking-tight mb-2">{p.title}</h3>
+                  <p className="text-sm text-ink-600 leading-relaxed">{p.body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      {/* ── Process ── */}
+      <section id="process" className="border-b border-ink-100">
+        <div className="max-w-6xl mx-auto px-6 py-20">
+          <div className="max-w-2xl mb-10">
+            <SectionLabel n="04" label="How it ships" />
+            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tighter mt-4 leading-[1.05]">
+              Floor plan to live product
+              <br />in two weeks.
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 border-y border-ink-100 divide-y md:divide-y-0 md:divide-x divide-ink-100">
+            {PROCESS.map((step) => (
+              <div key={step.n} className="py-8 md:px-8 first:md:pl-0 last:md:pr-0">
+                <span className="text-[11px] font-mono uppercase tracking-[0.18em] text-ink-400">
+                  Step {step.n}
+                </span>
+                <h3 className="text-lg font-bold text-ink-900 mt-2 mb-3 tracking-tight">{step.title}</h3>
+                <p className="text-sm text-ink-600 leading-relaxed">{step.body}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── Features ── */}
-      <section id="features" className="py-24 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="mb-14">
-            <p className="text-[11px] font-semibold text-primary-600 uppercase tracking-widest mb-3">
-              Platform capabilities
-            </p>
-            <h2 className="text-4xl font-extrabold tracking-tighter mb-3">
-              Built for the full stack of indoor intelligence
-            </h2>
-            <p className="text-ink-500 text-base max-w-xl leading-relaxed">
-              One platform serving visitors, building managers, and tenants without compromise.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-ink-200 border border-ink-200 rounded-xl overflow-hidden">
-            {FEATURES.map((f) => {
-              const Icon = f.icon;
-              return (
-                <div key={f.title} className="bg-white p-6 hover:bg-ink-50 transition-colors">
-                  <div className="w-9 h-9 rounded-lg bg-primary-50 border border-primary-100 flex items-center justify-center mb-4">
-                    <Icon className="w-[18px] h-[18px] text-primary-600" strokeWidth={2} />
-                  </div>
-                  <h3 className="font-semibold text-ink-900 mb-2 text-sm">{f.title}</h3>
-                  <p className="text-sm text-ink-500 leading-relaxed">{f.desc}</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* ── How it works ── */}
-      <section id="how" className="py-24 px-6 bg-ink-50 border-y border-ink-200">
-        <div className="max-w-6xl mx-auto">
-          <div className="mb-14">
-            <p className="text-[11px] font-semibold text-primary-600 uppercase tracking-widest mb-3">
-              Deployment process
-            </p>
-            <h2 className="text-4xl font-extrabold tracking-tighter">
-              From floor plan to live product
+      {/* ── Audiences ── */}
+      <section id="audiences" className="border-b border-ink-100 bg-ink-50/50">
+        <div className="max-w-6xl mx-auto px-6 py-20">
+          <div className="max-w-2xl mb-10">
+            <SectionLabel n="05" label="Three jobs, one database" />
+            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tighter mt-4 leading-[1.05]">
+              The same data,
+              <br />three different windows.
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {STEPS.map((step) => {
-              const Icon = step.icon;
-              return (
-                <div key={step.n} className="card p-6">
-                  <div className="flex items-center gap-4 mb-5">
-                    <div className="w-10 h-10 rounded-lg bg-ink-900 flex items-center justify-center flex-shrink-0">
-                      <Icon className="w-5 h-5 text-white" strokeWidth={1.75} />
-                    </div>
-                    <span className="text-5xl font-black text-ink-100 leading-none select-none">
-                      {step.n}
-                    </span>
-                  </div>
-                  <h3 className="font-bold text-ink-900 mb-2">{step.title}</h3>
-                  <p className="text-sm text-ink-500 leading-relaxed mb-4">{step.desc}</p>
-                  <div className="inline-flex items-center gap-1.5 text-xs text-ink-400 bg-ink-50 border border-ink-200 px-2.5 py-1 rounded-full font-medium">
-                    <span className="w-1.5 h-1.5 rounded-full bg-success-DEFAULT" />
-                    {step.meta}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Use cases ── */}
-      <section id="use" className="py-24 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="mb-14">
-            <p className="text-[11px] font-semibold text-primary-600 uppercase tracking-widest mb-3">
-              Use cases
-            </p>
-            <h2 className="text-4xl font-extrabold tracking-tighter">
-              Three products. One platform.
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {USE_CASES.map((card) => {
-              const Icon = card.icon;
-              return (
-                <div key={card.role} className="card overflow-hidden">
-                  <div className="px-5 py-4 border-b border-ink-100 flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-ink-900 flex items-center justify-center flex-shrink-0">
-                      <Icon className="w-[18px] h-[18px] text-white" strokeWidth={1.75} />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-ink-900 text-sm">{card.role}</h3>
-                      <p className="text-[11px] text-ink-400 font-medium">{card.sub}</p>
-                    </div>
-                  </div>
-                  <ul className="px-5 py-5 space-y-3">
-                    {card.items.map((item) => (
-                      <li key={item} className="flex items-start gap-2.5 text-sm text-ink-600">
-                        <CheckCircle2 className="w-4 h-4 text-success-DEFAULT flex-shrink-0 mt-0.5" strokeWidth={2.5} />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              );
-            })}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-px bg-ink-200 border border-ink-200 rounded-2xl overflow-hidden">
+            {AUDIENCES.map((card) => (
+              <div key={card.role} className="bg-white p-7">
+                <h3 className="text-base font-bold text-ink-900 tracking-tight">{card.role}</h3>
+                <p className="text-[11px] font-mono uppercase tracking-[0.18em] text-ink-400 mt-1">{card.sub}</p>
+                <ul className="mt-5 space-y-2.5">
+                  {card.items.map((item) => (
+                    <li key={item} className="flex items-start gap-2 text-sm text-ink-600 leading-relaxed">
+                      <span className="text-ink-300 mt-1">—</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* ── CTA ── */}
-      <section className="py-24 px-6 bg-ink-900">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-4xl font-extrabold tracking-tighter text-white mb-4">
-            Ready to digitise your building?
-          </h2>
-          <p className="text-ink-400 text-base mb-8 leading-relaxed max-w-xl mx-auto">
-            Map+ is already live at CHIC Kigali. Explore the full demo — public map, admin dashboard,
-            and tenant portal — before committing to anything.
-          </p>
-          <div className="flex items-center justify-center gap-3 flex-wrap">
+      <section className="bg-ink-900 text-white">
+        <div className="max-w-6xl mx-auto px-6 py-20 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:items-end">
+          <div className="lg:col-span-7">
+            <SectionLabel n="06" label="Try it" tone="dark" />
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tighter mt-4 leading-[1.05]">
+              Walk through it
+              <br />before you ask anything.
+            </h2>
+            <p className="text-ink-300 text-sm sm:text-base leading-relaxed mt-5 max-w-lg">
+              The CHIC Kigali map is the same database the admin and tenant consoles are wired into.
+              Spend five minutes there. Email us afterwards if it&apos;s interesting.
+            </p>
+          </div>
+          <div className="lg:col-span-5 flex flex-col sm:flex-row lg:flex-col gap-3 lg:items-end">
             <Link href="/map/chic-kigali"
-              className="inline-flex items-center gap-2 bg-white text-ink-900 font-bold text-sm px-6 py-3 rounded-lg hover:bg-ink-100 transition-colors shadow-xs">
-              <Map className="w-4 h-4" strokeWidth={2} />
-              Public map demo
+              className="inline-flex items-center justify-between gap-3 bg-white text-ink-900 font-bold text-sm px-5 py-3 rounded-lg hover:bg-ink-100 transition-colors w-full sm:w-auto lg:w-full">
+              Open the live map <ArrowRight className="w-4 h-4" strokeWidth={2} />
             </Link>
-            <Link href="/admin"
-              className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white font-semibold text-sm px-6 py-3 rounded-lg hover:bg-white/20 transition-colors">
-              <LayoutDashboard className="w-4 h-4" strokeWidth={2} />
-              Admin dashboard
-            </Link>
+            <a href="mailto:hello@impactmel.com?subject=mallGuide%20pilot%20enquiry"
+              className="inline-flex items-center justify-between gap-3 border border-white/20 text-white font-semibold text-sm px-5 py-3 rounded-lg hover:bg-white/10 transition-colors w-full sm:w-auto lg:w-full">
+              Email us <ArrowUpRight className="w-4 h-4" strokeWidth={2} />
+            </a>
           </div>
         </div>
       </section>
 
-      {/* ── Footer ── */}
-      <footer className="border-t border-ink-200 py-8 px-6">
-        <div className="max-w-6xl mx-auto flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-2">
-            <Map className="w-4 h-4 text-ink-400" strokeWidth={2} />
-            <span className="text-sm font-bold text-ink-700">Map+</span>
-            <span className="text-ink-200 mx-1">|</span>
-            <span className="text-sm text-ink-400">Indoor Building Intelligence · Impactmel · Kigali, Rwanda</span>
-          </div>
-          <div className="flex items-center gap-5 text-sm text-ink-400">
-            <Link href="/admin"  className="hover:text-ink-700 transition-colors">Admin</Link>
-            <Link href="/tenant" className="hover:text-ink-700 transition-colors">Tenant portal</Link>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
+
+// ── helpers ─────────────────────────────────────────────────────────────────
+
+function SectionLabel({ n, label, tone = 'light' }: { n: string; label: string; tone?: 'light' | 'dark' }) {
+  const num = tone === 'dark' ? 'text-white' : 'text-ink-900';
+  const txt = tone === 'dark' ? 'text-white/60' : 'text-ink-400';
+  return (
+    <div className="flex items-center gap-3 text-[11px] font-mono uppercase tracking-[0.22em]">
+      <span className={`font-bold ${num}`}>§ {n}</span>
+      <span className="h-px w-6 bg-current opacity-40" />
+      <span className={txt}>{label}</span>
+    </div>
+  );
+}
+

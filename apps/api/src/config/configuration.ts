@@ -33,4 +33,14 @@ export default () => ({
   qr: {
     baseUrl: process.env['QR_BASE_URL'] ?? 'http://localhost:3000/q',
   },
+
+  google: {
+    clientId: process.env['GOOGLE_CLIENT_ID'] ?? '',
+  },
+
+  anthropic: {
+    apiKey: process.env['ANTHROPIC_API_KEY'] ?? '',
+    // Default model for Go Social caption/hashtag generation.
+    model:  process.env['ANTHROPIC_MODEL'] ?? 'claude-sonnet-4-6',
+  },
 });

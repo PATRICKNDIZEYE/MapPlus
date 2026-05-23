@@ -1,14 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Pencil, Check, Phone, MessageCircle, CheckCircle2, Circle } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { ImageUpload } from '@/components/ui/ImageUpload';
 import { trpc } from '@/lib/trpc';
 
-// Demo: hardcoded shop ID for the KFC CHIC tenant in our seed data.
-// In production this comes from the authenticated session.
+// Demo: hardcoded shop ID until the authenticated tenant session is wired in.
 const DEMO_SHOP_ID = ''; // will show empty-state upload until seeder runs
 
 const WEEKLY = [62, 88, 74, 95, 108, 117, 132];
@@ -17,21 +16,22 @@ const MAX_W  = Math.max(...WEEKLY);
 
 export default function TenantShopPage() {
   const [editing,    setEditing]    = useState(false);
-  const [name,       setName]       = useState('KFC CHIC');
-  const [desc,       setDesc]       = useState('Fried chicken, burgers, and fast food. Enjoy our classic recipes at CHIC Kigali.');
-  const [phone,      setPhone]      = useState('+250 788 123 004');
-  const [whatsapp,   setWhatsapp]   = useState('+250 788 123 004');
+  const [name,       setName]       = useState('Brewmark Coffee');
+  const [desc,       setDesc]       = useState('Espresso, drip, and pastries. Open seven days on the ground floor.');
+  const [phone,      setPhone]      = useState('+1 415 555 0123');
+  const [whatsapp,   setWhatsapp]   = useState('+1 415 555 0123');
   const [coverUrl,   setCoverUrl]   = useState<string | null>(null);
   const [logoUrl,    setLogoUrl]    = useState<string | null>(null);
 
-  // Fetch real cover/logo if we have a shop ID
   const { data: shopData } = trpc.shops.byId.useQuery(
     { id: DEMO_SHOP_ID },
-    { enabled: !!DEMO_SHOP_ID, onSuccess: (s) => {
-      if (s.coverPhotoUrl) setCoverUrl(s.coverPhotoUrl);
-      if (s.logoUrl)       setLogoUrl(s.logoUrl);
-    } as any },
+    { enabled: !!DEMO_SHOP_ID },
   );
+
+  useEffect(() => {
+    if (shopData?.coverPhotoUrl) setCoverUrl(shopData.coverPhotoUrl);
+    if (shopData?.logoUrl)       setLogoUrl(shopData.logoUrl);
+  }, [shopData]);
 
   const uploadPhoto = trpc.media.uploadShopPhoto.mutate;
 

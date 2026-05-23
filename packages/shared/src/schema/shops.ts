@@ -4,6 +4,7 @@ import {
   varchar,
   text,
   integer,
+  numeric,
   boolean,
   timestamp,
   jsonb,
@@ -63,19 +64,50 @@ export const shopProfiles = pgTable(
   }),
 );
 
-export const products = pgTable('products', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  shopId: uuid('shop_id')
-    .notNull()
-    .references(() => shopProfiles.id, { onDelete: 'cascade' }),
-  name: varchar('name', { length: 200 }).notNull(),
-  description: text('description'),
-  price: varchar('price', { length: 50 }), // kept as string to support "from 5,000 RWF"
-  currency: varchar('currency', { length: 3 }).default('RWF'),
-  imageUrl: text('image_url'),
-  isAvailable: boolean('is_available').notNull().default(true),
-  sortOrder: integer('sort_order').notNull().default(0),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
-});
+export const products = pgTable(
+  'products',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    shopId: uuid('shop_id')
+      .notNull()
+      .references(() => shopProfiles.id, { onDelete: 'cascade' }),
+    // tenantId added for direct-by-tenant queries (Tenant Hub product mgmt). Nullable so
+    // existing rows don't need backfilling immediately; new inserts will set it.
+    tenantId: uuid('tenant_id'),
+
+    name: varchar('name', { length: 200 }).notNull(),
+    description: text('description'),
+    sku: varchar('sku', { length: 80 }),
+    category: varchar('category', { length: 100 }),
+
+    // Legacy display-string price ("from 5,000 RWF") — kept for backward compatibility.
+    price: varchar('price', { length: 50 }),
+    // Numeric price introduced for Buy & Try checkout. Nullable until backfilled.
+    priceAmount: numeric('price_amount', { precision: 12, scale: 2 }),
+    currency: varchar('currency', { length: 3 }).default('RWF'),
+
+    stockCount: integer('stock_count').notNull().default(0),
+
+    // Legacy single image. New uploads also populate the images JSONB array below.
+    imageUrl: text('image_url'),
+    // [{ url: string, isPrimary?: boolean }, ...]
+    images: jsonb('images').notNull().default([]),
+
+    // Legacy availability flag — paired with isPublished for Buy & Try gating.
+    isAvailable: boolean('is_available').notNull().default(true),
+    isPublished: boolean('is_published').notNull().default(false),
+    isBuyAndTryEligible: boolean('is_buy_and_try_eligible').notNull().default(true),
+
+    sortOrder: integer('sort_order').notNull().default(0),
+
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    shopIdx:      index('products_shop_idx').on(table.shopId),
+    tenantIdx:    index('products_tenant_idx').on(table.tenantId),
+    categoryIdx:  index('products_category_idx').on(table.category),
+    publishedIdx: index('products_published_idx').on(table.isPublished),
+  }),
+);
 

@@ -29,7 +29,7 @@ async function bootstrap() {
   const port = parseInt(process.env['API_PORT'] ?? '3001', 10);
   await app.listen(port);
 
-  Logger.log(`Map+ API running on http://localhost:${port}`, 'Bootstrap');
+  Logger.log(`mallGuide API running on http://localhost:${port}`, 'Bootstrap');
   Logger.log(`tRPC endpoint: http://localhost:${port}/trpc`, 'Bootstrap');
 }
 

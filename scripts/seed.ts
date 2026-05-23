@@ -14,7 +14,7 @@ dotenv.config({ path: resolve(__dirname, '../.env') });
 const DB_URL = process.env['DATABASE_URL'] ?? 'postgresql://ndizeye@localhost:5434/mapplus';
 
 // ── CHIC Kigali approximate coordinates ────────────────────────────────────
-// Real location: KG 9 Ave, Kigali, Rwanda
+// Real location: Nyarugenge, downtown Kigali, Rwanda
 const BUILDING_CENTER = { lat: -1.944218, lng: 30.059888 };
 
 // Helper: create a rectangle polygon offsetting from a center point
@@ -135,7 +135,7 @@ async function seed() {
     const { rows: [building] } = await client.query<{ id: string }>(
       `INSERT INTO buildings (org_id, name, slug, address, city, country, lat, lng, floors_count, status, is_public, description, timezone)
        VALUES ($1, 'CHIC Kigali', 'chic-kigali',
-               'KG 9 Ave, Kacyiru, Kigali', 'Kigali', 'Rwanda',
+               'Nyarugenge, downtown Kigali', 'Kigali', 'Rwanda',
                -1.944218, 30.059888, 3,
                'active', true,
                'Kigali''s premier commercial complex. 3 floors of retail, food, entertainment and services.',

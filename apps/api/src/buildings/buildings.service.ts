@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { eq, and } from 'drizzle-orm';
 import { DatabaseService } from '../database/database.service';
-import { buildings, floors, units } from '@mapplus/shared';
-import type { NewBuilding } from '@mapplus/shared';
+import { buildings, floors, units } from '@mallguide/shared';
+import type { NewBuilding } from '@mallguide/shared';
 
 @Injectable()
 export class BuildingsService {

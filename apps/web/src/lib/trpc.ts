@@ -1,6 +1,7 @@
 import { createTRPCReact } from '@trpc/react-query';
 import { httpBatchLink } from '@trpc/client';
-import type { AppRouter } from '@mapplus/api';
+import type { AppRouter } from '@mallguide/api';
+import { useAuthStore } from '@/store/auth.store';
 
 export type { AppRouter };
 
@@ -12,9 +13,8 @@ export function getTrpcClient() {
       httpBatchLink({
         url: `${process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:3001'}/trpc`,
         headers() {
-          // Attach JWT from localStorage (client-side only)
           if (typeof window === 'undefined') return {};
-          const token = localStorage.getItem('mapplus_token');
+          const token = useAuthStore.getState().accessToken;
           return token ? { Authorization: `Bearer ${token}` } : {};
         },
       }),

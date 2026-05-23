@@ -1,4 +1,4 @@
--- Map+ initial database migration
+-- mallGuide initial database migration
 -- Run AFTER Docker container initializes PostGIS extensions (scripts/init-db.sql)
 
 -- Enums

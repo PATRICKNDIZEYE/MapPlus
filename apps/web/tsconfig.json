@@ -13,16 +13,16 @@
       "@/*": [
         "./src/*"
       ],
-      "@mapplus/shared": [
+      "@mallguide/shared": [
         "../../packages/shared/src/index.ts"
       ],
-      "@mapplus/shared/*": [
+      "@mallguide/shared/*": [
         "../../packages/shared/src/*"
       ],
-      "@mapplus/api": [
+      "@mallguide/api": [
         "../api/src/index.ts"
       ],
-      "@mapplus/api/*": [
+      "@mallguide/api/*": [
         "../api/src/*"
       ]
     },

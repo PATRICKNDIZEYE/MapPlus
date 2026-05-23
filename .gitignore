@@ -40,3 +40,9 @@ coverage/
 
 # Drizzle migrations (keep the folder, ignore generated files marker)
 # apps/api/drizzle/meta/
+
+# TypeScript build cache
+*.tsbuildinfo
+
+# Dev-uploaded media (per-environment runtime state)
+apps/api/uploads/

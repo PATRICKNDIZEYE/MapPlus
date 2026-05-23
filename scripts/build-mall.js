@@ -282,59 +282,60 @@ function buildFloor(floorIdx) {
 }
 
 // ── Shop catalogue ────────────────────────────────────────────────────────────
-// A realistic mix of Rwanda local brands, East African chains, and international
-// brands. Mixed across all categories. ~60% occupancy target.
+// Generic, brand-free shop names in the SF/SaaS startup register. No real
+// trademarks, no city-specific references — anything that could plausibly
+// open in any large mall in the world. ~60% occupancy target.
 
 const SHOPS = {
   'Food & Beverages': [
-    'KFC',           'Pizza Hut',          "Domino's Pizza",    'Subway',
-    'Burger King',   'Java House',         'Bourbon Coffee',    'Inzozi Café',
-    'The Hut',       'Repub Lounge',       'Heaven Restaurant', 'Jollof House',
-    'Nyama Choma',   'Khana Khazana',      'Pili Pili',         'Soko Restaurant',
-    'Brew Bistro',   'Question Coffee',    "Roy's Bistro",       'Magda Café',
-    'Sole Luna',     'Khazana Indian',     'Volcana Lounge',     'Ten to Two Café',
-    'Crystal Cafe',  'Akabanga BBQ',       'Coffeeoffice',       'Patisserie',
+    'Brewmark Coffee',  'Loop Espresso',    'Stack Burger',      'Quartz Kitchen',
+    'Bento Box',        'Northstar Diner',  'Pixel Pizza',       'Indigo Tea',
+    'Lattice Bistro',   'The Daily Grain',  'Pour Over',         'Maple & Rye',
+    'Cobalt Coffee',    'Lumen Bakery',     'Folio Café',        'Drift Smoothies',
+    'Mainline Deli',    'Crumb & Co.',      'Bricks Pizzeria',   'Salt + Pepper',
+    'Bento Republic',   'Compose Café',     'Atlas Sandwiches',  'Granary',
+    'Pour House',       'Steady Eats',      'Common Table',      'Halftime Café',
   ],
   'Fashion & Apparel': [
-    'Nike',          'Adidas',             'Puma',               'Levi\'s',
-    'H&M',           'Zara',               'Mango',              'Forever 21',
-    'Bata',          'Crocs',              'Sketchers',          'Foot Locker',
-    'Tommy Hilfiger','Calvin Klein',       'GAP',                'Old Navy',
-    'Nakumatt Fashion','UniqStyle',        'Kigali Couture',     'African Threads',
-    'Inkanyamanza',  'Maison de Mode',     'Rosario Boutique',   'Stylefit',
+    'Loom Apparel',     'Vector Threads',   'Atlas Outfitters',  'Mainline Co.',
+    'Mercer & Park',    'North/South',      'Folio Studio',      'Range Goods',
+    'Field Notes',      'Sundry',           'Common Knit',       'Greylane',
+    'Beacon & Co.',     'Plainwear',        'Studio Worn',       'Anchor Apparel',
+    'Tidemark',         'Roam Outfitters',  'Cypress & Cedar',   'Modular Wardrobe',
+    'Hatch Studio',     'Cardinal Knit',    'Rover Co.',         'Linework',
   ],
   'Electronics': [
-    'iStore',        'Samsung',            'Sony Centre',        'LG Brand Shop',
-    'Huawei',        'Oppo',               'Xiaomi',             'Tecno',
-    'Infinix',       'JBL Audio',          'Phone Hub',          'Tech World',
-    'Kigali Electronics','Smart Solutions','PowerLine',          'Digital Plus',
+    'Lumen Audio',      'Vertex Devices',   'Bitwise',           'Onyx Hardware',
+    'Mercury Mobile',   'Signal Co.',       'Pixel Lab',         'Cobalt Tech',
+    'North Loop',       'Switchboard',      'Photon',            'Mainframe',
+    'Quanta Audio',     'Boundary',         'Wavelength',        'Stack Devices',
   ],
   'Health & Pharmacy': [
-    'Royal Pharmacy','Hope Pharmacy',      'Sawa Pharmacy',      'Care Pharmacy',
-    'Medplus',       'CityMed',            'Bramin Pharmacy',    'Goshen Pharmacy',
-    'Wellness Clinic','Kivu Health',       'Optica',             'Vision Plus',
+    'Vitals Pharmacy',  'Bridge Health',    'Lighthouse Apothecary', 'Cypress Care',
+    'Wellspring Rx',    'Northwind Health', 'Steady Pharmacy',   'Plainfield Rx',
+    'Bayline Clinic',   'Cardinal Health',  'Optic Co.',         'Clearfield Vision',
   ],
   'Banking & Finance': [
-    'Bank of Kigali','Equity Bank',        'I&M Bank',           'KCB',
-    'Cogebanque',    'NCBA',               'GT Bank',            'Access Bank',
-    'BPR Atlas',     'Urwego Bank',        'MTN MoMo',           'Airtel Money',
-    'Tigo Cash',     'Western Union',      'MoneyGram',          'BK Forex',
+    'Mercury Bank',     'Coast Capital',    'Greenline Bank',    'Civic Federal',
+    'Pacific Trust',    'Atlas Pay',        'Beacon Federal',    'Reserve & Co.',
+    'Vertex Credit Union','Granary Bank',   'Common Capital',    'Crosscurrent',
+    'Tidewater FX',     'Northshore Bank',  'Switchboard Pay',   'Folio Capital',
   ],
   'Beauty & Cosmetics': [
-    'Dove Beauty',   'MAC Cosmetics',      'Sephora',            'Bath & Body Works',
-    'The Body Shop', 'Inglot',             'Sleek MakeUp',       'Glow Beauty',
-    'Aroma Spa',     'Kibo Beauty',        'Salon de Paris',     'Studio Glam',
-    'Pure Skin',     'Beauty Avenue',
+    'Glow Lab',         'Quartz Beauty',    'Polaris Skin',      'Pearl Studio',
+    'Hue Beauty',       'Lumen Skin',       'Cypress Apothecary','Ember Studio',
+    'Halo Spa',         'Field Beauty',     'Mainline Glow',     'Linework Beauty',
+    'Pure & Plain',     'Saltbar',
   ],
   'Sports & Fitness': [
-    'Decathlon',     'Sports Direct',      'Adidas Sport',       'Nike Run',
-    'Planet Fitness','Waka Fitness',       'Kigali Sports',      'Simba Sports',
-    'Hike & Run',    'Camping World',
+    'Range & Track',    'Summit Athletic',  'Cadence Sports',    'Vector Fitness',
+    'Northstar Run',    'Trailhead',        'Tidemark Athletic', 'Common Form',
+    'Bedrock Climb',    'Mainline Cycle',
   ],
   'Entertainment': [
-    'Cinemax',       'Century Cinemas',    'Game Zone',          'Kids Empire',
-    'Bowling Lane',  'Escape Room Kigali', 'VR Arcade',          'Music Lab',
-    'Toy Universe',  'Hobby Lobby',
+    'Cinema Loop',      'Arcade Lane',      'Pixel Pinball',     'Lumen Stage',
+    'Drop Bowl',        'Quest Rooms',      'Stack Arcade',      'Open Mic Co.',
+    'Mainframe Games',  'Folio Books',
   ],
 };
 
@@ -421,7 +422,7 @@ async function main() {
     // 3. Update building floors_count + dimensions
     await client.query(
       `UPDATE buildings SET floors_count = 5, description = $1 WHERE id = $2`,
-      ['Kigali\'s flagship commercial complex. 5 floors, 800+ retail units, anchored by international brands and local favourites.', BLD],
+      ['Five-floor commercial complex with 800+ retail units across food, fashion, electronics, banking, wellness, and entertainment. Flagship Map+ pilot deployment.', BLD],
     );
 
     // 4. Generate units floor by floor
@@ -464,12 +465,13 @@ async function main() {
         const category   = pickCategory(seed);
         const shopName   = pickShopName(category, seed);
 
-        // Create tenant
-        const phone = `+25078${String(1000000 + seed * 7).slice(-7)}`;
+        // Create tenant — generic +1 415 (San Francisco area code) so the dev
+        // data isn't tied to any specific market.
+        const phone = `+1415555${String(1000 + seed * 7).slice(-4)}`;
         const { rows: [tenant] } = await client.query(
           `INSERT INTO tenants (org_id, legal_name, trade_name, contact_phone, contact_whatsapp)
            VALUES ($1, $2, $3, $4, $4) RETURNING id`,
-          [ORG, `${shopName} Ltd`, shopName, phone],
+          [ORG, `${shopName}, Inc.`, shopName, phone],
         );
 
         // Update unit → occupied + tenant
@@ -486,7 +488,7 @@ async function main() {
            VALUES ($1, $2, $3, $4, $5, $6, $7, $7, true, 'verified', NOW())`,
           [
             tenant.id, target.id, shopName,
-            `${shopName} — visit us at CHIC Kigali.`,
+            `${shopName} — open now on the ${floorDefs[fi].name.toLowerCase()}.`,
             category,
             `{"${category.toLowerCase()}"}`,
             phone,

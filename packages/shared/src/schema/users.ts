@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, boolean, timestamp, pgEnum } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, text, boolean, timestamp, pgEnum } from 'drizzle-orm/pg-core';
 import { organizations } from './organizations';
 import { tenants } from './tenants';
 
@@ -7,17 +7,24 @@ export const userRoleEnum = pgEnum('user_role', [
   'org_owner',
   'building_manager',
   'floor_manager',
+  'accounts',
+  'security',
+  'maintenance',
   'tenant_admin',
   'tenant_staff',
+  'delivery_personnel',
   'public',
 ]);
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
   email: varchar('email', { length: 200 }).notNull().unique(),
-  passwordHash: varchar('password_hash', { length: 200 }).notNull(),
+  // Nullable so Google-only accounts (no password set) are valid.
+  passwordHash: varchar('password_hash', { length: 200 }),
   firstName: varchar('first_name', { length: 100 }),
   lastName: varchar('last_name', { length: 100 }),
+  avatarUrl: text('avatar_url'),
+  googleSub: varchar('google_sub', { length: 100 }).unique(),
   role: userRoleEnum('role').notNull().default('public'),
   orgId: uuid('org_id').references(() => organizations.id, { onDelete: 'set null' }),
   tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'set null' }),

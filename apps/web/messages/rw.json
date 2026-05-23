@@ -1,0 +1,51 @@
+{
+  "common": {
+    "loading": "Birashakisha…",
+    "save": "Bika",
+    "cancel": "Hagarika",
+    "delete": "Siba",
+    "edit": "Hindura",
+    "back": "Subira",
+    "next": "Komeza",
+    "search": "Shakisha",
+    "yes": "Yego",
+    "no": "Oya"
+  },
+  "brand": {
+    "name": "mallGuide",
+    "tagline": "Umuyobozi w'Isoko na yoGuide"
+  },
+  "nav": {
+    "shopper":       "Umuguzi",
+    "tenant":        "Umucuruzi",
+    "management":    "Ubuyobozi bw'Isoko",
+    "delivery":      "Gutanga",
+    "signIn":        "Injira",
+    "signOut":       "Sohoka",
+    "language":      "Ururimi"
+  },
+  "shopper": {
+    "askYoGuide":    "Baza yoGuide",
+    "scanQr":        "Sikana QR ku marembo",
+    "buyAndTry":     "Gura ugerageze"
+  },
+  "tenant": {
+    "products":      "Ibicuruzwa",
+    "wallet":        "PiggyBox",
+    "rentAvance":    "RentAvance",
+    "marketing":     "Go Social"
+  },
+  "management": {
+    "rentRoll":      "Ikodesha",
+    "utilities":     "Serivisi",
+    "incidents":     "Ibibazo",
+    "maintenance":   "Gusana",
+    "analytics":     "Imibare"
+  },
+  "delivery": {
+    "myQueue":       "Akazi kanjye",
+    "pickup":        "Gutora",
+    "deliver":       "Gutanga",
+    "uploadPod":     "Ohereza ifoto y'icyemezo"
+  }
+}

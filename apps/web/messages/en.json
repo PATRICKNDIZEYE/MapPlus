@@ -1,0 +1,51 @@
+{
+  "common": {
+    "loading": "Loading…",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "search": "Search",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "brand": {
+    "name": "mallGuide",
+    "tagline": "The Mall Guide by yoGuide"
+  },
+  "nav": {
+    "shopper":       "Shopper",
+    "tenant":        "Tenant Hub",
+    "management":    "Mall Management",
+    "delivery":      "Delivery",
+    "signIn":        "Sign in",
+    "signOut":       "Sign out",
+    "language":      "Language"
+  },
+  "shopper": {
+    "askYoGuide":    "Ask yoGuide",
+    "scanQr":        "Scan a QR at any entrance",
+    "buyAndTry":     "Buy & Try"
+  },
+  "tenant": {
+    "products":      "Products",
+    "wallet":        "PiggyBox",
+    "rentAvance":    "RentAvance",
+    "marketing":     "Go Social"
+  },
+  "management": {
+    "rentRoll":      "Rent roll",
+    "utilities":     "Utilities",
+    "incidents":     "Incidents",
+    "maintenance":   "Maintenance",
+    "analytics":     "Analytics"
+  },
+  "delivery": {
+    "myQueue":       "My queue",
+    "pickup":        "Pickup",
+    "deliver":       "Deliver",
+    "uploadPod":     "Upload proof of delivery"
+  }
+}

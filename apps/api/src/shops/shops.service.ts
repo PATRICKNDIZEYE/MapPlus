@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { eq, and } from 'drizzle-orm';
 import { DatabaseService } from '../database/database.service';
-import { shopProfiles, products, units, floors } from '@mapplus/shared';
-import type { JwtPayload } from '@mapplus/shared';
+import { shopProfiles, products, units, floors } from '@mallguide/shared';
+import type { JwtPayload } from '@mallguide/shared';
 
 @Injectable()
 export class ShopsService {

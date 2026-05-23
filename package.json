@@ -1,5 +1,5 @@
 {
-  "name": "mapplus",
+  "name": "mallguide",
   "private": true,
   "scripts": {
     "dev": "turbo dev",
@@ -9,7 +9,7 @@
     "test": "turbo test",
     "db:generate": "turbo db:generate",
     "db:migrate": "turbo db:migrate",
-    "db:studio": "pnpm --filter @mapplus/api db:studio",
+    "db:studio": "pnpm --filter @mallguide/api db:studio",
     "format": "prettier --write \"**/*.{ts,tsx,json,md}\""
   },
   "devDependencies": {

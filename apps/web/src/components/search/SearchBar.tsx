@@ -52,7 +52,7 @@ export function SearchBar({ buildingId }: SearchBarProps) {
   return (
     <div ref={containerRef} className="relative flex-1 max-w-lg">
       <div className={`flex items-center bg-white rounded-2xl border transition-all px-3.5 py-2.5 gap-2.5
-        ${searchOpen ? 'border-blue-300 ring-2 ring-blue-100 shadow-lg' : 'border-gray-200 shadow-sm'}`}>
+        ${searchOpen ? 'border-primary-300 ring-2 ring-primary-100 shadow-lg' : 'border-gray-200 shadow-sm'}`}>
         <Search className="w-4 h-4 text-gray-400 flex-shrink-0" strokeWidth={2} />
         <input
           ref={inputRef}
@@ -63,7 +63,7 @@ export function SearchBar({ buildingId }: SearchBarProps) {
           onFocus={openSearch}
           className="flex-1 outline-none text-sm text-gray-800 placeholder:text-gray-400 bg-transparent min-w-0"
         />
-        {isLoading && <Loader2 className="w-4 h-4 text-blue-400 animate-spin flex-shrink-0" strokeWidth={2} />}
+        {isLoading && <Loader2 className="w-4 h-4 text-primary-400 animate-spin flex-shrink-0" strokeWidth={2} />}
         {searchQuery && !isLoading && (
           <button onClick={() => { closeSearch(); inputRef.current?.blur(); }}
             className="text-gray-300 hover:text-gray-500 flex-shrink-0">
@@ -89,8 +89,8 @@ export function SearchBar({ buildingId }: SearchBarProps) {
                   closeSearch();
                 }}
                 className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center gap-3 border-b border-gray-50 last:border-0 transition-colors">
-                <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
-                  <Icon className="w-4 h-4 text-blue-600" strokeWidth={2} />
+                <div className="w-9 h-9 rounded-xl bg-primary-50 flex items-center justify-center flex-shrink-0">
+                  <Icon className="w-4 h-4 text-primary-600" strokeWidth={2} />
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-gray-900 truncate">{r.shopName}</p>

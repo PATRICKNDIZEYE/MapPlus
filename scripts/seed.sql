@@ -66,7 +66,7 @@ INSERT INTO organizations (id, name, type, contact_email) VALUES
 INSERT INTO buildings (id, org_id, name, slug, address, city, country, lat, lng,
                        floors_count, status, is_public, description, timezone)
 VALUES (:'BLD', :'ORG', 'CHIC Kigali', 'chic-kigali',
-        'KG 9 Ave, Kacyiru, Kigali', 'Kigali', 'Rwanda',
+        'Nyarugenge, downtown Kigali', 'Kigali', 'Rwanda',
         -1.944218, 30.059888, 3, 'active', true,
         'Kigali''s premier commercial complex — 3 floors of retail, food & entertainment.',
         'Africa/Kigali');
