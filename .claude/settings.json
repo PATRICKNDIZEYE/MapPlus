@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm --version)",
+      "Bash(docker --version)",
+      "Bash(which docker *)",
+      "Read(//Applications/**)",
+      "Bash(/usr/local/bin/docker --version)",
+      "Bash(/usr/local/bin/docker info *)",
+      "Read(//opt/homebrew/**)",
+      "Bash(open -Ra \"Docker\")",
+      "Bash(brew --version)",
+      "Bash(psql --version)",
+      "Bash(/opt/homebrew/opt/postgresql@14/bin/psql --version)",
+      "Bash(/opt/homebrew/opt/postgresql@14/bin/psql -U ndizeye -c \"SELECT name, default_version FROM pg_available_extensions WHERE name IN \\('postgis','pg_trgm','unaccent','uuid-ossp'\\);\")",
+      "Bash(psql -U ndizeye -c \"SELECT name, default_version FROM pg_available_extensions WHERE name IN \\('postgis','pg_trgm','unaccent','uuid-ossp'\\);\")",
+      "Bash(psql -U postgres -c \"\\\\l\")",
+      "Bash(psql -d postgres -c \"\\\\l\")",
+      "Bash(psql -d postgres -c \"SELECT name, default_version FROM pg_available_extensions WHERE name IN \\('postgis','pg_trgm','unaccent','uuid-ossp'\\) ORDER BY name;\")",
+      "Bash(brew search *)",
+      "Bash(pnpm install *)",
+      "Bash(pnpm view *)",
+      "Bash(psql -d postgres -c \"CREATE DATABASE mapplus OWNER postgres ENCODING 'UTF8' LC_COLLATE 'C' LC_CTYPE 'C' TEMPLATE template0;\")",
+      "Bash(psql -d mapplus -c \"CREATE EXTENSION IF NOT EXISTS pg_trgm; CREATE EXTENSION IF NOT EXISTS unaccent; CREATE EXTENSION IF NOT EXISTS \\\\\"uuid-ossp\\\\\";\")",
+      "Bash(pnpm --filter @mapplus/shared typecheck)",
+      "Bash(psql -d mapplus -c \"CREATE EXTENSION IF NOT EXISTS postgis; CREATE EXTENSION IF NOT EXISTS postgis_topology;\")",
+      "Bash(brew info *)",
+      "Bash(pg_config --pkglibdir)",
+      "Bash(pg_config --sharedir)",
+      "Bash(brew list *)",
+      "Bash(LC_ALL=C /usr/local/opt/postgresql@17/bin/psql -p 5434 -d postgres -c \"SELECT version\\(\\);\")",
+      "Bash(LC_ALL=C /usr/local/opt/postgresql@17/bin/psql -p 5434 -d postgres -c 'CREATE DATABASE mapplus ENCODING '\\\\''UTF8'\\\\'' LC_COLLATE '\\\\''C'\\\\'' LC_CTYPE '\\\\''C'\\\\'' TEMPLATE template0;')",
+      "Bash(LC_ALL=C /usr/local/opt/postgresql@17/bin/psql -p 5434 -d mapplus -c ' *)",
+      "Bash(LC_ALL=C /usr/local/opt/postgresql@17/bin/psql -p 5434 -d mapplus -c \"\\\\dx\")",
+      "Bash(LC_ALL=C /usr/local/opt/postgresql@17/bin/psql -p 5434 -d mapplus -f apps/api/drizzle/0000_initial.sql)",
+      "Bash(LC_ALL=C /usr/local/opt/postgresql@17/bin/psql -p 5434 -d mapplus -c \"\\\\dt\")",
+      "Bash(pnpm dev *)",
+      "Bash(echo \"Dev servers starting in background \\(PID: $!\\)\")",
+      "Bash(grep -v \"^--$\")"
+    ]
+  }
+}

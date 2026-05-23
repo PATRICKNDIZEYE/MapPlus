@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── MapLibre resets ── */
+.maplibregl-map { @apply absolute inset-0; }
+.maplibregl-ctrl-group {
+  @apply !shadow-sm !rounded-lg overflow-hidden border border-ink-200;
+}
+/* Scale control on dark background */
+.maplibregl-ctrl-scale {
+  background: rgba(255,255,255,0.9) !important;
+  border-color: #334155 !important;
+  color: #0f172a !important;
+  font-family: var(--font-jakarta), sans-serif !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+}
+/* Navigation control on dark background */
+.maplibregl-ctrl-zoom-in,
+.maplibregl-ctrl-zoom-out,
+.maplibregl-ctrl-compass {
+  background-color: rgba(255,255,255,0.95) !important;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { @apply bg-ink-200 rounded-full; }
+::-webkit-scrollbar-thumb:hover { @apply bg-ink-300; }
+
+/* ── Base ── */
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { height: 100%; }
+}
+
+/* Heading typography — set once, applies globally */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-jakarta), system-ui, sans-serif;
+  letter-spacing: -0.025em;
+  font-feature-settings: 'ss01', 'ss03';
+}
+
+/* ── Shared layout utilities ── */
+@layer utilities {
+  .nav-link {
+    @apply flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium
+           transition-colors duration-150 select-none;
+  }
+  .nav-link-active  { @apply bg-primary-600 text-white; }
+  .nav-link-idle    { @apply text-white/50 hover:text-white/80 hover:bg-white/5; }
+
+  .card {
+    @apply bg-white border border-ink-200 rounded-xl shadow-xs;
+  }
+  .card-header {
+    @apply px-5 py-4 border-b border-ink-100 flex items-center justify-between;
+  }
+  .input-base {
+    @apply w-full border border-ink-200 rounded-lg px-3 py-2 text-sm text-ink-900
+           placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-primary-500
+           focus:border-primary-500 transition-colors bg-white;
+  }
+  .btn-primary {
+    @apply inline-flex items-center gap-1.5 bg-primary-600 hover:bg-primary-700
+           text-white font-semibold text-sm px-4 py-2 rounded-lg
+           transition-colors shadow-xs;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center gap-1.5 bg-white hover:bg-ink-50
+           text-ink-700 font-medium text-sm px-4 py-2 rounded-lg
+           border border-ink-200 hover:border-ink-300
+           transition-colors shadow-xs;
+  }
+  .badge {
+    @apply inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full;
+  }
+}
