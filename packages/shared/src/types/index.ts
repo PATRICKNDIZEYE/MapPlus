@@ -21,6 +21,7 @@ import type {
   socialPosts,
   platformConfig,
   notifications,
+  searchClicks,
   navNodes,
   navEdges,
   qrAnchors,
@@ -61,6 +62,7 @@ export type TenantSocialAccount = InferSelectModel<typeof tenantSocialAccounts>;
 export type SocialPost = InferSelectModel<typeof socialPosts>;
 export type PlatformConfig = InferSelectModel<typeof platformConfig>;
 export type Notification = InferSelectModel<typeof notifications>;
+export type SearchClick = InferSelectModel<typeof searchClicks>;
 
 // ─── Insert types (writing to DB) ────────────────────────────────────────────
 export type NewBuilding = InferInsertModel<typeof buildings>;
@@ -86,6 +88,7 @@ export type NewTenantSocialAccount = InferInsertModel<typeof tenantSocialAccount
 export type NewSocialPost = InferInsertModel<typeof socialPosts>;
 export type NewPlatformConfig = InferInsertModel<typeof platformConfig>;
 export type NewNotification = InferInsertModel<typeof notifications>;
+export type NewSearchClick = InferInsertModel<typeof searchClicks>;
 
 // ─── GeoJSON types used across the platform ──────────────────────────────────
 export type GeoJSONPoint = { type: 'Point'; coordinates: [number, number] };

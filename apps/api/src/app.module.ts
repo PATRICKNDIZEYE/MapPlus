@@ -11,6 +11,7 @@ import { MediaModule } from './media/media.module';
 import { AuthModule } from './auth/auth.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PaymentsModule } from './payments/payments.module';
+import { MlModule } from './ml/ml.module';
 import { TrpcModule } from './trpc/trpc.module';
 import { TrpcMiddleware } from './trpc/trpc.middleware';
 
@@ -32,6 +33,7 @@ import { TrpcMiddleware } from './trpc/trpc.middleware';
     MediaModule,
     NotificationsModule,
     PaymentsModule,
+    MlModule,
     TrpcModule,
   ],
 })

@@ -19,6 +19,7 @@ export * from './utility_bills';
 export * from './gosocial';
 export * from './platform_config';
 export * from './notifications';
+export * from './search_clicks';
 export * from './helpers';
 // Relations must be exported so Drizzle ORM's query builder can use them
 export * from './relations';
