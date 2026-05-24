@@ -2,6 +2,7 @@
   "name": "mallguide",
   "private": true,
   "scripts": {
+    "up": "bash scripts/dev.sh",
     "dev": "turbo dev",
     "build": "turbo build",
     "lint": "turbo lint",
