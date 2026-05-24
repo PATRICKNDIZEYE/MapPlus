@@ -2,7 +2,7 @@
   "name": "mallguide",
   "private": true,
   "scripts": {
-    "up": "bash scripts/dev.sh",
+    "boot": "bash scripts/dev.sh",
     "dev": "turbo dev",
     "build": "turbo build",
     "lint": "turbo lint",
@@ -14,10 +14,10 @@
     "format": "prettier --write \"**/*.{ts,tsx,json,md}\""
   },
   "devDependencies": {
-    "turbo": "^2.1.0",
-    "prettier": "^3.3.0",
-    "typescript": "^5.5.0",
-    "@types/node": "^20.14.0"
+    "@types/node": "^20.19.41",
+    "prettier": "^3.8.3",
+    "turbo": "^2.9.14",
+    "typescript": "^5.9.3"
   },
   "engines": {
     "node": ">=20.0.0",
