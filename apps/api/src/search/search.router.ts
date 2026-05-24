@@ -1,11 +1,17 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ForbiddenException } from '@nestjs/common';
 import { z } from 'zod';
-import { router, publicProcedure } from '../trpc/trpc.init';
+import { router, publicProcedure, protectedProcedure } from '../trpc/trpc.init';
 import { SearchService } from './search.service';
+import { DemandIntelligenceService } from '../ml/demand-intelligence.service';
+
+const ADMIN_ROLES = ['super_admin', 'org_owner', 'building_manager', 'floor_manager'];
 
 @Injectable()
 export class SearchRouter {
-  constructor(private search: SearchService) {}
+  constructor(
+    private search: SearchService,
+    private demand: DemandIntelligenceService,
+  ) {}
 
   get trpcRouter() {
     return router({
@@ -30,6 +36,25 @@ export class SearchRouter {
       failedSearches: publicProcedure
         .input(z.object({ buildingId: z.string().uuid() }))
         .query(({ input }) => this.search.getFailedSearches(input.buildingId)),
+
+      /**
+       * Demand intelligence — clusters of failed shopper queries that
+       * represent unmet demand the building can lease into. Mall staff only.
+       */
+      demandClusters: protectedProcedure
+        .input(z.object({
+          buildingId: z.string().uuid().optional(),
+          windowDays: z.number().int().min(1).max(365).optional(),
+        }).optional())
+        .query(({ ctx, input }) => {
+          if (!ADMIN_ROLES.includes(ctx.user!.role)) {
+            throw new ForbiddenException('Mall staff only');
+          }
+          return this.demand.clusters({
+            buildingId: input?.buildingId,
+            windowDays: input?.windowDays,
+          });
+        }),
     });
   }
 }
