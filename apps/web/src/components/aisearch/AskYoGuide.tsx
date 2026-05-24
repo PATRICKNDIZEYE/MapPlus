@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { trpc } from '@/lib/trpc';
+import { getShopperSessionId } from '@/lib/shopperSession';
 
 type ProductHit = {
   productId: string;
@@ -36,9 +37,17 @@ type Turn = {
   id: string;
   role: 'user' | 'assistant';
   text: string;
+  query?: string;
   shops?: ShopHit[];
   products?: ProductHit[];
 };
+
+type ResultClickHandler = (
+  query: string,
+  resultType: 'shop' | 'product',
+  resultId: string,
+  rank: number,
+) => void;
 
 const SUGGESTIONS = [
   'Where can I buy a laptop?',
@@ -76,6 +85,18 @@ export function AskYoGuide({ onClose }: { onClose: () => void }) {
   const scrollerRef = useRef<HTMLDivElement | null>(null);
 
   const ask = trpc.aisearch.ask.useMutation();
+  const trackClick = trpc.aisearch.trackClick.useMutation();
+
+  const onResultClick: ResultClickHandler = (query, resultType, resultId, rank) => {
+    trackClick.mutate({
+      query,
+      locale,
+      resultType,
+      resultId,
+      rank,
+      shopperSessionId: getShopperSessionId(),
+    });
+  };
 
   // Auto-scroll on new turn.
   useEffect(() => {
@@ -133,7 +154,7 @@ export function AskYoGuide({ onClose }: { onClose: () => void }) {
         .slice(0, 5);
       setTurns((prev) => [
         ...prev,
-        { id: crypto.randomUUID(), role: 'assistant', text: res.reply, shops, products },
+        { id: crypto.randomUUID(), role: 'assistant', text: res.reply, query: trimmed, shops, products },
       ]);
     } catch (err) {
       setTurns((prev) => [
@@ -187,7 +208,7 @@ export function AskYoGuide({ onClose }: { onClose: () => void }) {
           )}
 
           {turns.map((t) => (
-            <TurnBubble key={t.id} turn={t} onAsk={submit} />
+            <TurnBubble key={t.id} turn={t} onAsk={submit} onResultClick={onResultClick} />
           ))}
 
           {ask.isPending && (
@@ -238,7 +259,9 @@ export function AskYoGuide({ onClose }: { onClose: () => void }) {
   );
 }
 
-function TurnBubble({ turn, onAsk }: { turn: Turn; onAsk: (text: string) => void }) {
+function TurnBubble({
+  turn, onAsk: _onAsk, onResultClick,
+}: { turn: Turn; onAsk: (text: string) => void; onResultClick: ResultClickHandler }) {
   if (turn.role === 'user') {
     return (
       <div className="flex justify-end">
@@ -249,6 +272,7 @@ function TurnBubble({ turn, onAsk }: { turn: Turn; onAsk: (text: string) => void
     );
   }
 
+  const q = turn.query ?? '';
   return (
     <div className="space-y-2">
       <div className="max-w-[88%] px-3 py-2 rounded-2xl rounded-tl-sm bg-ink-100 text-ink-900 text-sm leading-relaxed whitespace-pre-wrap">
@@ -256,22 +280,35 @@ function TurnBubble({ turn, onAsk }: { turn: Turn; onAsk: (text: string) => void
       </div>
       {turn.products && turn.products.length > 0 && (
         <div className="grid grid-cols-1 gap-2 ml-2">
-          {turn.products.map((p) => <ProductCard key={p.productId} product={p} />)}
+          {turn.products.map((p, i) => (
+            <ProductCard
+              key={p.productId}
+              product={p}
+              onClick={() => onResultClick(q, 'product', p.productId, i)}
+            />
+          ))}
         </div>
       )}
       {turn.shops && turn.shops.length > 0 && !turn.products?.length && (
         <div className="grid grid-cols-1 gap-2 ml-2">
-          {turn.shops.map((s) => <ShopCard key={s.shopId} shop={s} />)}
+          {turn.shops.map((s, i) => (
+            <ShopCard
+              key={s.shopId}
+              shop={s}
+              onClick={() => onResultClick(q, 'shop', s.shopId, i)}
+            />
+          ))}
         </div>
       )}
     </div>
   );
 }
 
-function ProductCard({ product }: { product: ProductHit }) {
+function ProductCard({ product, onClick }: { product: ProductHit; onClick: () => void }) {
   return (
     <Link
       href={`/shop/${product.shopId}`}
+      onClick={onClick}
       className="block px-3 py-2.5 rounded-xl border border-ink-200 hover:border-primary-300 hover:bg-primary-50/40 transition-colors"
     >
       <div className="flex items-start gap-3">
@@ -298,10 +335,11 @@ function ProductCard({ product }: { product: ProductHit }) {
   );
 }
 
-function ShopCard({ shop }: { shop: ShopHit }) {
+function ShopCard({ shop, onClick }: { shop: ShopHit; onClick: () => void }) {
   return (
     <Link
       href={`/shop/${shop.shopId}`}
+      onClick={onClick}
       className="block px-3 py-2.5 rounded-xl border border-ink-200 hover:border-primary-300 hover:bg-primary-50/40 transition-colors"
     >
       <div className="flex items-start gap-3">

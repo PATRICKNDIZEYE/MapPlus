@@ -6,8 +6,9 @@ import { DatabaseService } from '../database/database.service';
 import { PlatformConfigService } from '../platform/platform-config.service';
 import { HybridSearchService, type ShopHit, type ProductHit } from '../ml/hybrid-search.service';
 import {
-  shopProfiles, units, floors, buildings, analyticsEvents,
+  shopProfiles, units, floors, buildings, analyticsEvents, searchClicks,
 } from '@mallguide/shared';
+import type { NewSearchClick } from '@mallguide/shared';
 
 interface AskResult {
   reply: string;
@@ -226,5 +227,13 @@ export class AiSearchService {
       searchQuery: query,
       resultCount,
     });
+  }
+
+  /**
+   * Record a click on a search result. Feeds the future learning-to-rank
+   * reranker and surfaces popular shops for "Trending" UI.
+   */
+  async trackClick(input: NewSearchClick) {
+    await this.db.db.insert(searchClicks).values(input);
   }
 }
