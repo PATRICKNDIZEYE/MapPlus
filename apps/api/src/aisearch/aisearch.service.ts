@@ -5,6 +5,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { DatabaseService } from '../database/database.service';
 import { PlatformConfigService } from '../platform/platform-config.service';
 import { HybridSearchService, type ShopHit, type ProductHit } from '../ml/hybrid-search.service';
+import { LlmRerankerService } from '../ml/llm-reranker.service';
 import {
   shopProfiles, units, floors, buildings, analyticsEvents, searchClicks,
 } from '@mallguide/shared';
@@ -78,6 +79,7 @@ export class AiSearchService {
     private readonly db: DatabaseService,
     private readonly platformConfig: PlatformConfigService,
     private readonly hybrid: HybridSearchService,
+    private readonly reranker: LlmRerankerService,
   ) {
     this.fallbackModel = config.get<string>('anthropic.model') ?? 'claude-sonnet-4-6';
     const apiKey = config.get<string>('anthropic.apiKey');
@@ -163,8 +165,18 @@ export class AiSearchService {
 
   private async runTool(name: string, input: Record<string, unknown>): Promise<unknown> {
     switch (name) {
-      case 'search_products':   return this.searchProducts(input as Parameters<typeof this.searchProducts>[0]);
-      case 'search_shops':      return this.searchShops(input as Parameters<typeof this.searchShops>[0]);
+      case 'search_products': {
+        const args = input as Parameters<typeof this.searchProducts>[0];
+        const hits = await this.searchProducts(args);
+        // LLM rerank the top-N from hybrid retrieval; if rerank is unavailable
+        // (no API key, single result, network failure) we return the RRF order.
+        return this.reranker.rerankProducts(args.query, hits);
+      }
+      case 'search_shops': {
+        const args = input as Parameters<typeof this.searchShops>[0];
+        const hits = await this.searchShops(args);
+        return this.reranker.rerankShops(args.query, hits);
+      }
       case 'get_shop_details':  return this.getShopDetails(input as { shopId: string });
       default: return { error: `Unknown tool: ${name}` };
     }

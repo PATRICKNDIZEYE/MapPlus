@@ -1,6 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { EmbeddingService } from './embedding.service';
 import { HybridSearchService } from './hybrid-search.service';
+import { LlmRerankerService } from './llm-reranker.service';
 
 /**
  * ML infrastructure shared across services. Global so AiSearchService,
@@ -8,7 +9,7 @@ import { HybridSearchService } from './hybrid-search.service';
  */
 @Global()
 @Module({
-  providers: [EmbeddingService, HybridSearchService],
-  exports:   [EmbeddingService, HybridSearchService],
+  providers: [EmbeddingService, HybridSearchService, LlmRerankerService],
+  exports:   [EmbeddingService, HybridSearchService, LlmRerankerService],
 })
 export class MlModule {}
