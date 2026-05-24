@@ -1,40 +1,13 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { eq, and, gte, lte, ilike, sql, type SQL } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import Anthropic from '@anthropic-ai/sdk';
 import { DatabaseService } from '../database/database.service';
 import { PlatformConfigService } from '../platform/platform-config.service';
+import { HybridSearchService, type ShopHit, type ProductHit } from '../ml/hybrid-search.service';
 import {
-  products, shopProfiles, units, floors, buildings, analyticsEvents,
+  shopProfiles, units, floors, buildings, analyticsEvents,
 } from '@mallguide/shared';
-
-interface ShopHit {
-  shopId: string;
-  shopName: string;
-  category: string | null;
-  buildingId: string;
-  buildingName: string;
-  floorName: string;
-  unitCode: string;
-  description: string | null;
-  logoUrl: string | null;
-}
-
-interface ProductHit {
-  productId: string;
-  name: string;
-  category: string | null;
-  priceAmount: number | null;
-  currency: string;
-  stockCount: number;
-  imageUrl: string | null;
-  shopId: string;
-  shopName: string;
-  buildingId: string;
-  buildingName: string;
-  floorName: string;
-  unitCode: string;
-}
 
 interface AskResult {
   reply: string;
@@ -103,6 +76,7 @@ export class AiSearchService {
     private readonly config: ConfigService,
     private readonly db: DatabaseService,
     private readonly platformConfig: PlatformConfigService,
+    private readonly hybrid: HybridSearchService,
   ) {
     this.fallbackModel = config.get<string>('anthropic.model') ?? 'claude-sonnet-4-6';
     const apiKey = config.get<string>('anthropic.apiKey');
@@ -195,65 +169,18 @@ export class AiSearchService {
     }
   }
 
+  /**
+   * Delegate to HybridSearchService — Postgres FTS + pgvector cosine search
+   * fused with Reciprocal Rank Fusion. Same input/output shape the Claude
+   * tools expect.
+   */
   async searchProducts(input: {
     query: string;
     maxPrice?: number;
     category?: string;
     buildingSlug?: string;
   }): Promise<ProductHit[]> {
-    const conds: SQL[] = [
-      eq(products.isPublished, true),
-      ilike(products.name, `%${input.query}%`),
-    ];
-    if (input.category) conds.push(eq(products.category, input.category));
-    if (input.maxPrice !== undefined) {
-      conds.push(lte(products.priceAmount, input.maxPrice.toFixed(2)));
-    }
-
-    const rows = await this.db.db
-      .select({
-        productId: products.id,
-        name: products.name,
-        category: products.category,
-        priceAmount: products.priceAmount,
-        currency: products.currency,
-        stockCount: products.stockCount,
-        imageUrl: products.imageUrl,
-        shopId: products.shopId,
-        shopName: shopProfiles.publicName,
-        buildingId: units.buildingId,
-        buildingName: buildings.name,
-        buildingSlug: buildings.slug,
-        floorName: floors.name,
-        unitCode: units.unitCode,
-      })
-      .from(products)
-      .innerJoin(shopProfiles, eq(shopProfiles.id, products.shopId))
-      .innerJoin(units, eq(units.id, shopProfiles.unitId))
-      .innerJoin(floors, eq(floors.id, units.floorId))
-      .innerJoin(buildings, eq(buildings.id, units.buildingId))
-      .where(and(...conds))
-      .limit(20);
-
-    const filtered = input.buildingSlug
-      ? rows.filter((r) => r.buildingSlug === input.buildingSlug)
-      : rows;
-
-    return filtered.map((r) => ({
-      productId: r.productId,
-      name: r.name,
-      category: r.category,
-      priceAmount: r.priceAmount ? Number(r.priceAmount) : null,
-      currency: r.currency ?? 'RWF',
-      stockCount: r.stockCount,
-      imageUrl: r.imageUrl,
-      shopId: r.shopId,
-      shopName: r.shopName,
-      buildingId: r.buildingId,
-      buildingName: r.buildingName,
-      floorName: r.floorName,
-      unitCode: r.unitCode,
-    }));
+    return this.hybrid.searchProducts(input);
   }
 
   async searchShops(input: {
@@ -261,76 +188,7 @@ export class AiSearchService {
     category?: string;
     buildingSlug?: string;
   }): Promise<ShopHit[]> {
-    // Postgres FTS + trigram across all buildings (extends per-building search.service).
-    const rows = await this.db.rawPool.query<{
-      shop_id: string;
-      shop_name: string;
-      category: string | null;
-      description: string | null;
-      logo_url: string | null;
-      building_id: string;
-      building_name: string;
-      building_slug: string;
-      floor_name: string;
-      unit_code: string;
-    }>(
-      `SELECT
-        s.id as shop_id,
-        s.public_name as shop_name,
-        s.category,
-        s.description,
-        s.logo_url,
-        b.id as building_id,
-        b.name as building_name,
-        b.slug as building_slug,
-        f.name as floor_name,
-        u.unit_code,
-        ts_rank(
-          to_tsvector('english',
-            coalesce(s.public_name, '') || ' ' ||
-            coalesce(s.description, '') || ' ' ||
-            coalesce(s.category, '') || ' ' ||
-            coalesce(array_to_string(s.tags, ' '), '')
-          ),
-          plainto_tsquery('english', $1)
-        ) + similarity(s.public_name, $1) * 0.5 as rank
-       FROM shop_profiles s
-       JOIN units u ON u.id = s.unit_id
-       JOIN floors f ON f.id = u.floor_id
-       JOIN buildings b ON b.id = u.building_id
-       WHERE s.is_published = true
-         AND u.visibility = true
-         AND (
-           to_tsvector('english',
-             coalesce(s.public_name, '') || ' ' ||
-             coalesce(s.description, '') || ' ' ||
-             coalesce(s.category, '') || ' ' ||
-             coalesce(array_to_string(s.tags, ' '), '')
-           ) @@ plainto_tsquery('english', $1)
-           OR similarity(s.public_name, $1) > 0.2
-         )
-       ORDER BY rank DESC
-       LIMIT 20`,
-      [input.query],
-    );
-
-    const filtered = rows.rows.filter((r) => {
-      if (input.category && r.category !== input.category) return false;
-      if (input.buildingSlug && r.building_slug !== input.buildingSlug) return false;
-      return true;
-    });
-
-    return filtered.map((r) => ({
-      shopId: r.shop_id,
-      shopName: r.shop_name,
-      category: r.category,
-      description: r.description,
-      logoUrl: r.logo_url,
-      buildingId: r.building_id,
-      buildingName: r.building_name,
-      floorName: r.floor_name,
-      unitCode: r.unit_code,
-    }));
+    return this.hybrid.searchShops(input);
   }
 
   async getShopDetails(input: { shopId: string }) {
