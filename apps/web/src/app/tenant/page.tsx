@@ -7,30 +7,32 @@ import { Badge } from '@/components/ui/Badge';
 import { ImageUpload } from '@/components/ui/ImageUpload';
 import { trpc } from '@/lib/trpc';
 
-// Demo: hardcoded shop ID until the authenticated tenant session is wired in.
-const DEMO_SHOP_ID = ''; // will show empty-state upload until seeder runs
-
 const WEEKLY = [62, 88, 74, 95, 108, 117, 132];
 const DAYS   = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const MAX_W  = Math.max(...WEEKLY);
 
 export default function TenantShopPage() {
   const [editing,    setEditing]    = useState(false);
-  const [name,       setName]       = useState('Brewmark Coffee');
-  const [desc,       setDesc]       = useState('Espresso, drip, and pastries. Open seven days on the ground floor.');
-  const [phone,      setPhone]      = useState('+1 415 555 0123');
-  const [whatsapp,   setWhatsapp]   = useState('+1 415 555 0123');
+  const [name,       setName]       = useState('');
+  const [desc,       setDesc]       = useState('');
+  const [phone,      setPhone]      = useState('');
+  const [whatsapp,   setWhatsapp]   = useState('');
   const [coverUrl,   setCoverUrl]   = useState<string | null>(null);
   const [logoUrl,    setLogoUrl]    = useState<string | null>(null);
 
-  const { data: shopData } = trpc.shops.byId.useQuery(
-    { id: DEMO_SHOP_ID },
-    { enabled: !!DEMO_SHOP_ID },
-  );
+  // Pull the logged-in tenant's first shop. tRPC's `shops.mine` reads
+  // ctx.user.tenantId on the server so there's no shopId in the URL.
+  const { data: myShops, isLoading } = trpc.shops.mine.useQuery();
+  const shopData = myShops?.[0] ?? null;
 
   useEffect(() => {
-    if (shopData?.coverPhotoUrl) setCoverUrl(shopData.coverPhotoUrl);
-    if (shopData?.logoUrl)       setLogoUrl(shopData.logoUrl);
+    if (!shopData) return;
+    setName(shopData.publicName ?? '');
+    setDesc(shopData.description ?? '');
+    setPhone(shopData.phone ?? '');
+    setWhatsapp(shopData.whatsapp ?? '');
+    setCoverUrl(shopData.coverPhotoUrl ?? null);
+    setLogoUrl(shopData.logoUrl ?? null);
   }, [shopData]);
 
   const uploadPhoto = trpc.media.uploadShopPhoto.mutate;
@@ -54,7 +56,11 @@ export default function TenantShopPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-lg font-bold text-ink-900">My shop</h1>
-          <p className="text-sm text-ink-400 mt-0.5">KFC CHIC · Ground Floor · Unit G-A04</p>
+          <p className="text-sm text-ink-400 mt-0.5">
+            {isLoading ? 'Loading…' :
+              shopData ? `${shopData.publicName} · ${shopData.floorName ?? ''} · Unit ${shopData.unitCode ?? ''}`
+                       : 'No shop linked to your account yet. Contact your mall administrator.'}
+          </p>
         </div>
         <button
           onClick={() => setEditing(!editing)}

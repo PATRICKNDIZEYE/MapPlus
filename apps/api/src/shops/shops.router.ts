@@ -24,6 +24,13 @@ export class ShopsRouter {
         .input(z.object({ id: z.string().uuid() }))
         .query(({ input }) => this.shops.findById(input.id)),
 
+      // Tenant Hub: returns the calling tenant's shops (usually 1).
+      mine: protectedProcedure.query(({ ctx }) => {
+        const tenantId = ctx.user!.tenantId;
+        if (!tenantId) return [];
+        return this.shops.listMine(tenantId);
+      }),
+
       listByBuilding: publicProcedure
         .input(z.object({ buildingId: z.string().uuid(), floorId: z.string().uuid().optional() }))
         .query(({ input }) => this.shops.listByBuilding(input.buildingId, input.floorId)),

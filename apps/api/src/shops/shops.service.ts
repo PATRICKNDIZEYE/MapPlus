@@ -8,6 +8,41 @@ import type { JwtPayload } from '@mallguide/shared';
 export class ShopsService {
   constructor(private db: DatabaseService) {}
 
+  /**
+   * Return all shops belonging to the calling tenant. Used by the Tenant Hub
+   * landing page so it can render the logged-in tenant's actual shop without
+   * needing a shopId in the URL.
+   */
+  async listMine(tenantId: string) {
+    return this.db.db
+      .select({
+        id: shopProfiles.id,
+        publicName: shopProfiles.publicName,
+        description: shopProfiles.description,
+        category: shopProfiles.category,
+        subcategory: shopProfiles.subcategory,
+        tags: shopProfiles.tags,
+        logoUrl: shopProfiles.logoUrl,
+        coverPhotoUrl: shopProfiles.coverPhotoUrl,
+        phone: shopProfiles.phone,
+        whatsapp: shopProfiles.whatsapp,
+        email: shopProfiles.email,
+        website: shopProfiles.website,
+        operatingHours: shopProfiles.operatingHours,
+        verificationStatus: shopProfiles.verificationStatus,
+        isPublished: shopProfiles.isPublished,
+        unitId: shopProfiles.unitId,
+        unitCode: units.unitCode,
+        floorId: units.floorId,
+        floorName: floors.name,
+        floorNumber: floors.floorNumber,
+      })
+      .from(shopProfiles)
+      .innerJoin(units, eq(units.id, shopProfiles.unitId))
+      .innerJoin(floors, eq(floors.id, units.floorId))
+      .where(eq(shopProfiles.tenantId, tenantId));
+  }
+
   async findById(id: string) {
     const [shop] = await this.db.db
       .select({
