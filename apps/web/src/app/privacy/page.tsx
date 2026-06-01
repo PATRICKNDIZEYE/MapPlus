@@ -18,14 +18,14 @@ export default function PrivacyPage() {
 
         <Section title="1. Who we are">
           <p>
-            mallGuide is a mall ecosystem platform operated by Impactmel Ltd, a company
+            mallGuide is a mall ecosystem platform operated by yoGuide Ltd, a company
             registered in Rwanda with offices in Nyarugenge, downtown Kigali. References to “we”,
-            “our”, or “us” in this policy mean Impactmel Ltd.
+            “our”, or “us” in this policy mean yoGuide Ltd.
           </p>
           <p>
             For questions about this policy or about how your data is handled, write to{' '}
-            <a className="text-primary-600 hover:text-primary-700 font-semibold" href="mailto:privacy@impactmel.com">
-              privacy@impactmel.com
+            <a className="text-primary-600 hover:text-primary-700 font-semibold" href="mailto:privacy@yoguide.com">
+              privacy@yoguide.com
             </a>.
           </p>
         </Section>
@@ -69,7 +69,7 @@ export default function PrivacyPage() {
         <Section title="5. Your rights">
           <p>
             You can request a copy of the data we hold about you, ask us to correct it, or ask us
-            to delete it. Email <a className="text-primary-600 hover:text-primary-700 font-semibold" href="mailto:privacy@impactmel.com">privacy@impactmel.com</a>{' '}
+            to delete it. Email <a className="text-primary-600 hover:text-primary-700 font-semibold" href="mailto:privacy@yoguide.com">privacy@yoguide.com</a>{' '}
             and we will respond within 30 days. If your account is deleted, we retain a minimal
             audit log for 12 months to satisfy fraud and compliance obligations.
           </p>

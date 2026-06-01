@@ -25,8 +25,8 @@ export default function ContactPage() {
           <Tile
             icon={Mail}
             label="Email"
-            value="hello@impactmel.com"
-            href="mailto:hello@impactmel.com?subject=mallGuide%20enquiry"
+            value="hello@yoguide.com"
+            href="mailto:hello@yoguide.com?subject=mallGuide%20enquiry"
             sub="General enquiries and partnerships"
           />
 
@@ -49,8 +49,8 @@ export default function ContactPage() {
           <Tile
             icon={Building2}
             label="Sales / pilots"
-            value="pilots@impactmel.com"
-            href="mailto:pilots@impactmel.com?subject=Pilot%20enquiry"
+            value="pilots@yoguide.com"
+            href="mailto:pilots@yoguide.com?subject=Pilot%20enquiry"
             sub="Building owners and operators"
           />
         </div>
@@ -62,7 +62,7 @@ export default function ContactPage() {
             </h2>
           </div>
           <div className="px-6 py-5 text-sm text-ink-600 leading-relaxed">
-            <p className="font-semibold text-ink-900">Impactmel Ltd</p>
+            <p className="font-semibold text-ink-900">yoGuide Ltd</p>
             <p>Nyarugenge, downtown Kigali</p>
             <p>Rwanda</p>
             <p className="mt-3 text-xs text-ink-400">

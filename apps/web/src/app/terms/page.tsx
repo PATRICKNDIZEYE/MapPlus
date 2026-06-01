@@ -58,7 +58,7 @@ export default function TermsPage() {
         <Section title="5. Subscriptions and payment">
           <p>
             During the pilot phase, access for the CHIC Kigali deployment is provided free of charge.
-            Future commercial terms will be agreed in writing between Impactmel Ltd and the
+            Future commercial terms will be agreed in writing between yoGuide Ltd and the
             building&apos;s organisation owner before any fees apply. There are no automatic charges
             during the pilot.
           </p>
@@ -66,7 +66,7 @@ export default function TermsPage() {
 
         <Section title="6. Intellectual property">
           <p>
-            mallGuide and its underlying software remain the property of Impactmel Ltd. Building owners
+            mallGuide and its underlying software remain the property of yoGuide Ltd. Building owners
             and tenants retain ownership of the content they upload (logos, photos, descriptions,
             lease data) and grant us a non-exclusive licence to host and display that content
             within the service.

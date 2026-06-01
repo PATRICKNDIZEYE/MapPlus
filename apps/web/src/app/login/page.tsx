@@ -156,7 +156,7 @@ function LoginForm() {
         </div>
 
         <p className="text-center text-xs text-ink-400 mt-6">
-          Need access? <a href="mailto:hello@impactmel.com" className="text-primary-600 hover:text-primary-700 font-semibold">Contact your administrator</a>
+          Need access? <a href="mailto:hello@yoguide.com" className="text-primary-600 hover:text-primary-700 font-semibold">Contact your administrator</a>
         </p>
       </div>
     </div>

@@ -51,7 +51,7 @@ export function MarketingHeader() {
             <Link href="/login" className="hidden sm:inline-flex text-xs font-semibold text-white/80 hover:text-white px-3 py-1.5">
               Sign in
             </Link>
-            <a href="mailto:hello@impactmel.com?subject=mallGuide%20pilot%20enquiry"
+            <a href="mailto:hello@yoguide.com?subject=mallGuide%20pilot%20enquiry"
                className="inline-flex items-center gap-1.5 bg-white text-ink-900 hover:bg-ink-50 transition-colors text-xs font-semibold px-3.5 sm:px-4 py-2 rounded-full shadow-sm whitespace-nowrap">
               Book a call
             </a>
@@ -97,7 +97,7 @@ export function MarketingHeader() {
               className="inline-flex items-center justify-center bg-white/10 hover:bg-white/15 border border-white/20 text-white font-semibold text-sm py-3 rounded-full">
               Sign in
             </Link>
-            <a href="mailto:hello@impactmel.com?subject=mallGuide%20pilot%20enquiry"
+            <a href="mailto:hello@yoguide.com?subject=mallGuide%20pilot%20enquiry"
               className="inline-flex items-center justify-center bg-white text-ink-900 hover:bg-ink-50 font-semibold text-sm py-3 rounded-full">
               Book a call
             </a>

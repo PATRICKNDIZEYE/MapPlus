@@ -31,11 +31,11 @@ export function SiteFooter() {
             </div>
             <p className="text-sm text-ink-500 leading-relaxed max-w-sm">
               Indoor building intelligence for commercial real estate.
-              Built by Impactmel in Kigali, Rwanda.
+              Built by yoGuide in Kigali, Rwanda.
             </p>
             <p className="text-xs text-ink-400 mt-4">
-              <a href="mailto:hello@impactmel.com" className="hover:text-ink-700 transition-colors">
-                hello@impactmel.com
+              <a href="mailto:hello@yoguide.com" className="hover:text-ink-700 transition-colors">
+                hello@yoguide.com
               </a>
               <span className="mx-2 text-ink-200">·</span>
               <a href="tel:+250252000000" className="hover:text-ink-700 transition-colors">
@@ -50,7 +50,7 @@ export function SiteFooter() {
         </div>
 
         <div className="pt-6 border-t border-ink-100 flex items-center justify-between gap-4 flex-wrap text-xs text-ink-400">
-          <span>© {new Date().getFullYear()} Impactmel Ltd · Nyarugenge, downtown Kigali · Rwanda</span>
+          <span>© {new Date().getFullYear()} yoGuide Ltd · Nyarugenge, downtown Kigali · Rwanda</span>
           <span className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-success-DEFAULT" />
             Pilot live at CHIC Kigali

@@ -17,7 +17,7 @@ const NAV = [
 ];
 
 /**
- * Sidebar for super_admin (Impactmel staff) — running the SaaS itself.
+ * Sidebar for super_admin (yoGuide staff) — running the SaaS itself.
  * Distinct from MallSidebar which is for building owners running one mall.
  */
 export function PlatformSidebar() {
@@ -62,7 +62,7 @@ export function PlatformSidebar() {
         <div className="px-3 py-2 rounded-xl bg-primary-600/15 flex items-center gap-2.5">
           <ShieldAlert className="w-3.5 h-3.5 text-primary-300 flex-shrink-0" strokeWidth={2} />
           <p className="text-[11px] font-semibold text-primary-100 leading-tight">
-            Impactmel staff · super_admin
+            yoGuide staff · super_admin
           </p>
         </div>
       </div>

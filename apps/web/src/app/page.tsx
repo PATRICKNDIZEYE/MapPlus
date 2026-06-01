@@ -159,7 +159,7 @@ export default function HomePage() {
                 className="inline-flex items-center justify-center gap-2 bg-gradient-to-b from-primary-500 to-primary-700 hover:from-primary-600 hover:to-primary-800 text-white font-semibold text-sm px-5 py-3 rounded-full shadow-[0_8px_24px_-6px_rgba(75,0,130,0.55)] hover:shadow-[0_12px_28px_-6px_rgba(75,0,130,0.65)] hover:-translate-y-0.5 transition-all">
                 Explore the live map <ArrowRight className="w-4 h-4" />
               </Link>
-              <a href="mailto:hello@impactmel.com?subject=mallGuide%20pilot%20enquiry"
+              <a href="mailto:hello@yoguide.com?subject=mallGuide%20pilot%20enquiry"
                 className="inline-flex items-center justify-center gap-2 bg-white/15 hover:bg-white/25 backdrop-blur border border-white/30 hover:border-white/50 text-white font-semibold text-sm px-5 py-3 rounded-full transition-colors">
                 Book a call
               </a>
@@ -328,7 +328,7 @@ export default function HomePage() {
               className="inline-flex items-center justify-between gap-3 bg-white text-ink-900 font-bold text-sm px-5 py-3 rounded-lg hover:bg-ink-100 transition-colors w-full sm:w-auto lg:w-full">
               Open the live map <ArrowRight className="w-4 h-4" strokeWidth={2} />
             </Link>
-            <a href="mailto:hello@impactmel.com?subject=mallGuide%20pilot%20enquiry"
+            <a href="mailto:hello@yoguide.com?subject=mallGuide%20pilot%20enquiry"
               className="inline-flex items-center justify-between gap-3 border border-white/20 text-white font-semibold text-sm px-5 py-3 rounded-lg hover:bg-white/10 transition-colors w-full sm:w-auto lg:w-full">
               Email us <ArrowUpRight className="w-4 h-4" strokeWidth={2} />
             </a>

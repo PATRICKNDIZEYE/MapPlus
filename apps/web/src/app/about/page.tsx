@@ -5,7 +5,7 @@ import { Building2, MapPin, Users, Sparkles, ArrowRight } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'About mallGuide',
-  description: 'mallGuide is an indoor building intelligence platform built by Impactmel in Kigali, Rwanda.',
+  description: 'mallGuide is an indoor building intelligence platform built by yoGuide in Kigali, Rwanda.',
 };
 
 export default function AboutPage() {
@@ -19,7 +19,7 @@ export default function AboutPage() {
         </h1>
         <p className="text-lg text-ink-500 leading-relaxed mb-12 max-w-2xl">
           mallGuide is the operating system for commercial real estate — a search, navigation,
-          and operations layer on top of a building. Built by Impactmel in Kigali.
+          and operations layer on top of a building. Built by yoGuide in Kigali.
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-ink-200 border border-ink-200 rounded-xl overflow-hidden mb-14">
@@ -54,7 +54,7 @@ export default function AboutPage() {
 
         <Section title="Who we are">
           <p>
-            Impactmel is a Rwandan technology company building infrastructure for the next
+            yoGuide is a Rwandan technology company building infrastructure for the next
             generation of African commerce. mallGuide is our flagship product. The CHIC Kigali
             pilot is the first deployment; the next three buildings are in conversation.
           </p>
