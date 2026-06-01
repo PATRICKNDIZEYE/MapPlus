@@ -9,10 +9,15 @@
  *   # or, load from .env:
  *   node scripts/migrate.js
  */
-const { Client } = require('pg');
 const { readFileSync, readdirSync } = require('fs');
 const { join, resolve } = require('path');
-const { config } = require('dotenv');
+const { createRequire } = require('module');
+
+// pnpm workspaces install pg + dotenv in the api workspace, not the root.
+// Resolve them from apps/api so this script works regardless of cwd.
+const apiRequire = createRequire(resolve(__dirname, '..', 'apps', 'api', 'package.json'));
+const { Client } = apiRequire('pg');
+const { config } = apiRequire('dotenv');
 
 config({ path: resolve(__dirname, '..', '.env') });
 
