@@ -5,6 +5,7 @@
     "boot": "bash scripts/dev.sh",
     "dev": "turbo dev",
     "migrate": "node scripts/migrate.js",
+    "seed": "node scripts/seed.js",
     "build": "turbo build",
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",

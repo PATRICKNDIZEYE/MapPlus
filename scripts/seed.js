@@ -1,15 +1,22 @@
 #!/usr/bin/env node
 /**
  * Seed script — CHIC Kigali demo data
- * Run from monorepo root: node scripts/seed.js
+ * Usage:
+ *   pnpm seed                                              (uses .env)
+ *   DATABASE_URL=postgresql://... node scripts/seed.js     (override)
  */
-const { Client } = require('./node_modules/.pnpm/pg@8.21.0/node_modules/pg');
-const { config: loadEnv } = require('./node_modules/.pnpm/dotenv@16.4.5/node_modules/dotenv');
 const path = require('path');
+const { createRequire } = require('module');
+
+// Resolve pg + dotenv from apps/api workspace (pnpm doesn't hoist).
+const apiRequire = createRequire(path.resolve(__dirname, '..', 'apps', 'api', 'package.json'));
+const { Client } = apiRequire('pg');
+const { config: loadEnv } = apiRequire('dotenv');
 
 loadEnv({ path: path.resolve(__dirname, '../.env') });
 
 const DB_URL = process.env.DATABASE_URL ?? 'postgresql://ndizeye@localhost:5434/mapplus';
+const NEEDS_SSL = /neon\.tech|sslmode=require/.test(DB_URL);
 
 const BUILDING_CENTER = { lat: -1.944218, lng: 30.059888 };
 const M = 0.000009;
@@ -72,7 +79,10 @@ function floorUnits(floorOffset) {
 }
 
 async function seed() {
-  const client = new Client({ connectionString: DB_URL });
+  const client = new Client({
+    connectionString: DB_URL,
+    ssl: NEEDS_SSL ? { rejectUnauthorized: false } : undefined,
+  });
   await client.connect();
   console.log('🌱 Seeding CHIC Kigali...\n');
 
