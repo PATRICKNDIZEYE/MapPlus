@@ -25,7 +25,9 @@ loadEnv({ path: path.resolve(__dirname, '..', '.env') });
 
 const DB_URL = process.env.DATABASE_URL ?? 'postgresql://ndizeye@localhost:5434/mapplus';
 const NEEDS_SSL = /neon\.tech|sslmode=require/.test(DB_URL);
-const PASSWORD = process.env.DEMO_PASSWORD || 'demo123';
+// Default password meets the 8-char floor enforced by /login + auth.router.
+// Easy to type, easy to communicate verbally — override with $DEMO_PASSWORD.
+const PASSWORD = process.env.DEMO_PASSWORD || 'mallguide-demo-2026';
 
 const USERS = [
   // Platform tier
