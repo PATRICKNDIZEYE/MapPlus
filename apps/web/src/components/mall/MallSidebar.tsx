@@ -46,8 +46,6 @@ const NAV: NavItem[] = [
   { href: '/mall/incidents',   icon: AlertTriangle,   label: 'Incidents',   roles: [...ALL_ADMINS, 'security'] },
   { href: '/mall/maintenance', icon: Wrench,          label: 'Maintenance', roles: [...ALL_ADMINS, 'maintenance'] },
   { href: '/mall/analytics',   icon: BarChart3,       label: 'Analytics',   roles: ALL_ADMINS },
-  { href: '/mall/demand',      icon: TrendingUp,      label: 'Demand',      roles: ALL_ADMINS },
-  { href: '/mall/qr',          icon: QrCode,          label: 'QR Codes',    roles: ALL_ADMINS },
 ];
 
 export function MallSidebar() {
