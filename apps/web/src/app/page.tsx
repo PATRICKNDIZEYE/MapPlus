@@ -3,16 +3,9 @@ import {
   ArrowRight, ArrowUpRight,
 } from 'lucide-react';
 import { SiteFooter } from '@/components/marketing/SiteFooter';
-import { Logo } from '@/components/brand/Logo';
+import { MarketingHeader } from '@/components/marketing/MarketingHeader';
 import { PropertyDashboard } from '@/components/marketing/PropertyDashboard';
 import { HeroProductFan } from '@/components/marketing/HeroProductFan';
-
-const NAV = [
-  { label: 'Product',   href: '#product'  },
-  { label: 'Pilot',     href: '#pilot'    },
-  { label: 'Process',   href: '#process'  },
-  { label: 'Audiences', href: '#audiences'},
-];
 
 const PRINCIPLES = [
   {
@@ -108,29 +101,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-white font-jakarta text-ink-900">
 
-      {/* ── Floating header (over the sky gradient, becomes solid on scroll) ── */}
-      <header className="absolute top-0 inset-x-0 z-40 h-16">
-        <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
-          <Logo size="sm" tone="light" />
-          <nav className="hidden md:flex items-center text-[13px] font-medium">
-            {NAV.map((item) => (
-              <Link key={item.href} href={item.href}
-                className="px-3 py-1.5 text-white/70 hover:text-white transition-colors">
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-          <div className="flex items-center gap-2">
-            <Link href="/login" className="text-xs font-semibold text-white/80 hover:text-white px-3 py-1.5">
-              Sign in
-            </Link>
-            <a href="mailto:hello@impactmel.com?subject=mallGuide%20pilot%20enquiry"
-               className="inline-flex items-center gap-1.5 bg-white text-ink-900 hover:bg-white/90 transition-colors text-xs font-semibold px-4 py-2 rounded-full shadow-sm">
-              Book a call
-            </a>
-          </div>
-        </div>
-      </header>
+      <MarketingHeader />
 
       {/* ── Hero — sky gradient with floating product cards ── */}
       <section className="relative overflow-hidden">
@@ -170,25 +141,26 @@ export default function HomePage() {
         <div className="relative pt-32 pb-12 px-6">
           <div className="max-w-5xl mx-auto text-center">
 
-            <h1 className="text-white text-[44px] sm:text-[64px] lg:text-[88px] xl:text-[96px] font-extrabold tracking-tighter leading-[0.96]">
+            <h1 className="text-white text-[36px] sm:text-[56px] lg:text-[88px] xl:text-[96px] font-extrabold tracking-tighter leading-[0.96]">
               Mapping the inside
               <br />
               of every commercial building.
             </h1>
 
-            <p className="mt-6 text-white/80 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+            <p className="mt-5 sm:mt-6 text-white/80 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed px-2 sm:px-0">
               mallGuide digitises floor plans into searchable, navigable, leaseable digital products.
               <br className="hidden sm:inline" />
               One mall in production. Three more under contract.
             </p>
 
-            <div className="mt-9 flex items-center justify-center gap-3 flex-wrap">
+            {/* CTAs — full-width on mobile (one-tap thumb targets), inline on desktop. */}
+            <div className="mt-8 sm:mt-9 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 max-w-xs sm:max-w-none mx-auto">
               <Link href="/map/chic-kigali"
-                className="inline-flex items-center gap-2 bg-gradient-to-b from-primary-500 to-primary-700 hover:from-primary-400 hover:to-primary-600 text-white font-semibold text-sm px-5 py-3 rounded-full shadow-[0_8px_24px_-6px_rgba(75,0,130,0.55)] transition-colors">
+                className="inline-flex items-center justify-center gap-2 bg-gradient-to-b from-primary-500 to-primary-700 hover:from-primary-600 hover:to-primary-800 text-white font-semibold text-sm px-5 py-3 rounded-full shadow-[0_8px_24px_-6px_rgba(75,0,130,0.55)] hover:shadow-[0_12px_28px_-6px_rgba(75,0,130,0.65)] hover:-translate-y-0.5 transition-all">
                 Explore the live map <ArrowRight className="w-4 h-4" />
               </Link>
               <a href="mailto:hello@impactmel.com?subject=mallGuide%20pilot%20enquiry"
-                className="inline-flex items-center gap-2 bg-white/15 hover:bg-white/25 backdrop-blur border border-white/25 text-white font-semibold text-sm px-5 py-3 rounded-full transition-colors">
+                className="inline-flex items-center justify-center gap-2 bg-white/15 hover:bg-white/25 backdrop-blur border border-white/30 hover:border-white/50 text-white font-semibold text-sm px-5 py-3 rounded-full transition-colors">
                 Book a call
               </a>
             </div>
