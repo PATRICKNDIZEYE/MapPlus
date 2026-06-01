@@ -4,10 +4,11 @@ import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { trpc } from '@/lib/trpc';
-import { useMapActions, useActiveFloorId, useSelectedShop, useMapStore, useMapStore as mapStore } from '@/store/map.store';
+import { useMapActions, useActiveFloorId, useSelectedShop, useRouteVisible, useMapStore, useMapStore as mapStore } from '@/store/map.store';
 import { FloorSelector } from './FloorSelector';
 import { SearchBar } from '@/components/search/SearchBar';
 import { ShopPanel } from './ShopPanel';
+import { DirectionsPanel } from './DirectionsPanel';
 import {
   ArrowLeft, Menu, QrCode, MapPin, Building2, ChevronUp, ChevronDown, X,
   Laptop2, Shirt, Utensils, Pill, Banknote, Sparkles, Dumbbell, Clapperboard, Store,
@@ -35,6 +36,7 @@ export function BuildingMapView({ buildingSlug, initialFloorId }: BuildingMapVie
   const { setActiveBuilding, setActiveFloor } = useMapActions();
   const activeFloorId = useActiveFloorId();
   const selectedShop  = useSelectedShop();
+  const routeVisible  = useRouteVisible();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
 
@@ -221,8 +223,13 @@ export function BuildingMapView({ buildingSlug, initialFloorId }: BuildingMapVie
           </div>
         </div>
 
-        {/* Shop panel — already responsive */}
-        {selectedShop && <ShopPanel shopId={selectedShop.shopId} />}
+        {/* Directions panel takes priority when "Guide Me There" was tapped;
+            otherwise fall back to the shop info panel. */}
+        {routeVisible && selectedShop ? (
+          <DirectionsPanel shopId={selectedShop.shopId} />
+        ) : selectedShop ? (
+          <ShopPanel shopId={selectedShop.shopId} />
+        ) : null}
 
         {/* ───── Mobile-only: bottom-sheet directory ───────────────────────── */}
         {/* The peek chip (always visible on mobile) */}

@@ -79,4 +79,5 @@ export const useMapStore = create<MapStore>((set) => ({
 // Selector helpers — use these instead of selecting the whole store
 export const useActiveFloorId = () => useMapStore((s) => s.activeFloorId);
 export const useSelectedShop = () => useMapStore((s) => s.selectedShop);
+export const useRouteVisible = () => useMapStore((s) => s.routeVisible);
 export const useMapActions = () => useMapStore((s) => s.actions);
