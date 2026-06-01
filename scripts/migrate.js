@@ -47,7 +47,29 @@ async function main() {
   });
   await client.connect();
 
-  console.log(`Applying ${files.length} migration${files.length === 1 ? '' : 's'} against ${maskUrl(DATABASE_URL)}\n`);
+  console.log(`Target: ${maskUrl(DATABASE_URL)}\n`);
+
+  // Enable required extensions before any migration runs.
+  // Migration 0000 already declares postgis but Neon/managed Postgres needs
+  // CREATE EXTENSION as its own statement first.
+  process.stdout.write('  ▸ extensions (postgis, pg_trgm, vector) … ');
+  const extensions = ['postgis', 'pg_trgm', 'vector'];
+  const enabled = [];
+  for (const ext of extensions) {
+    try {
+      await client.query(`CREATE EXTENSION IF NOT EXISTS ${ext}`);
+      enabled.push(ext);
+    } catch (err) {
+      // pgvector may not be available on every Postgres — log and continue.
+      if (ext === 'vector') continue;
+      console.log('FAILED');
+      console.error(`    ${err.message}`);
+      process.exit(1);
+    }
+  }
+  console.log(`ok (${enabled.join(', ')}${enabled.includes('vector') ? '' : '; vector unavailable, semantic search will be disabled'})`);
+
+  console.log(`\nApplying ${files.length} migration${files.length === 1 ? '' : 's'}:\n`);
 
   for (const file of files) {
     const sql = readFileSync(join(MIGRATIONS_DIR, file), 'utf8');
