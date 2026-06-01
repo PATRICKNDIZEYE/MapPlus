@@ -9,7 +9,7 @@ import { FloorSelector } from './FloorSelector';
 import { SearchBar } from '@/components/search/SearchBar';
 import { ShopPanel } from './ShopPanel';
 import {
-  ArrowLeft, Menu, QrCode, MapPin,
+  ArrowLeft, Menu, QrCode, MapPin, Building2, ChevronUp, ChevronDown, X,
   Laptop2, Shirt, Utensils, Pill, Banknote, Sparkles, Dumbbell, Clapperboard, Store,
 } from 'lucide-react';
 
@@ -36,6 +36,7 @@ export function BuildingMapView({ buildingSlug, initialFloorId }: BuildingMapVie
   const activeFloorId = useActiveFloorId();
   const selectedShop  = useSelectedShop();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
 
   const { data: building, isLoading: loadingBuilding } =
     trpc.buildings.bySlug.useQuery({ slug: buildingSlug });
@@ -91,8 +92,8 @@ export function BuildingMapView({ buildingSlug, initialFloorId }: BuildingMapVie
   return (
     <div className="h-full flex overflow-hidden bg-white">
 
-      {/* ── Left panel — shop directory ── */}
-      <div className={`flex-shrink-0 border-r border-gray-100 flex flex-col bg-white transition-all duration-300 ${sidebarOpen ? 'w-[280px]' : 'w-0 overflow-hidden'}`}>
+      {/* ── Left panel — shop directory (desktop only; mobile gets a bottom sheet) ── */}
+      <div className={`hidden md:flex flex-shrink-0 border-r border-gray-100 flex-col bg-white transition-all duration-300 ${sidebarOpen ? 'w-[280px]' : 'w-0 overflow-hidden'}`}>
 
         {/* Panel header */}
         <div className="px-4 pt-4 pb-3 border-b border-gray-50 flex-shrink-0">
@@ -174,10 +175,13 @@ export function BuildingMapView({ buildingSlug, initialFloorId }: BuildingMapVie
       <div className="flex-1 relative min-w-0">
 
         {/* Top search bar */}
-        <div className="absolute top-0 inset-x-0 z-20 flex items-center gap-2 px-4 py-3 glass">
-          {/* Sidebar toggle */}
+        <div className="absolute top-0 inset-x-0 z-20 flex items-center gap-2 px-3 sm:px-4 py-3 glass">
+          {/* Back button on mobile, sidebar toggle on desktop */}
+          <Link href="/" className="md:hidden w-9 h-9 rounded-xl bg-white border border-ink-100 shadow-card flex items-center justify-center text-ink-500 flex-shrink-0">
+            <ArrowLeft className="w-4 h-4" strokeWidth={2} />
+          </Link>
           <button onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="w-9 h-9 rounded-xl bg-white border border-gray-200 shadow-card flex items-center justify-center text-gray-500 hover:border-gray-300 flex-shrink-0 transition-colors">
+            className="hidden md:flex w-9 h-9 rounded-xl bg-white border border-gray-200 shadow-card items-center justify-center text-gray-500 hover:border-gray-300 flex-shrink-0 transition-colors">
             <Menu className="w-4 h-4" strokeWidth={2} />
           </button>
           <SearchBar buildingId={building.id} />
@@ -217,8 +221,101 @@ export function BuildingMapView({ buildingSlug, initialFloorId }: BuildingMapVie
           </div>
         </div>
 
-        {/* Shop panel */}
+        {/* Shop panel — already responsive */}
         {selectedShop && <ShopPanel shopId={selectedShop.shopId} />}
+
+        {/* ───── Mobile-only: bottom-sheet directory ───────────────────────── */}
+        {/* The peek chip (always visible on mobile) */}
+        <button
+          type="button"
+          onClick={() => setMobileSheetOpen(true)}
+          className={`md:hidden absolute bottom-4 left-1/2 -translate-x-1/2 z-30 inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-white shadow-lg border border-ink-100 transition-opacity ${selectedShop ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+        >
+          <Store className="w-4 h-4 text-primary-600" strokeWidth={2} />
+          <span className="text-sm font-semibold text-ink-900">
+            {shops?.length ?? 0} shops {activeFloor ? `· ${activeFloor.name}` : ''}
+          </span>
+          <ChevronUp className="w-3.5 h-3.5 text-ink-400" strokeWidth={2.5} />
+        </button>
+
+        {/* The actual sheet (expanded) */}
+        {mobileSheetOpen && (
+          <div className="md:hidden absolute inset-x-0 bottom-0 z-40 max-h-[75vh] flex flex-col bg-white rounded-t-3xl shadow-2xl border-t border-ink-100">
+            {/* Drag handle */}
+            <button
+              type="button"
+              onClick={() => setMobileSheetOpen(false)}
+              className="pt-3 pb-2 flex items-center justify-center"
+              aria-label="Close directory"
+            >
+              <span className="w-10 h-1 rounded-full bg-ink-200" />
+            </button>
+
+            {/* Sheet header */}
+            <div className="px-5 pb-3 flex items-center justify-between flex-shrink-0">
+              <div>
+                <p className="text-sm font-bold text-ink-900">{building.name}</p>
+                <p className="text-xs text-ink-500">{shops?.length ?? 0} shops · {activeFloor?.name}</p>
+              </div>
+              <button onClick={() => setMobileSheetOpen(false)}
+                className="w-8 h-8 rounded-full hover:bg-ink-100 flex items-center justify-center text-ink-400">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Floor tabs (compact) */}
+            {floors && floors.length > 1 && (
+              <div className="px-5 pb-3 flex gap-1 bg-ink-50 mx-5 rounded-xl p-1 flex-shrink-0">
+                {floors.map((f) => (
+                  <button key={f.id}
+                    onClick={() => setActiveFloor(f.id, f.floorNumber)}
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all
+                      ${activeFloorId === f.id ? 'bg-white shadow-sm text-ink-900' : 'text-ink-500'}`}>
+                    {f.shortName ?? (f.floorNumber === 0 ? 'G' : `L${f.floorNumber}`)}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Shop list */}
+            <div className="flex-1 overflow-y-auto overscroll-contain">
+              {!shops?.length ? (
+                <div className="flex flex-col items-center justify-center py-12 text-ink-400 text-sm">
+                  <Store className="w-7 h-7 text-ink-200 mb-2" strokeWidth={1.5} />
+                  No shops on this floor
+                </div>
+              ) : shops.map((shop) => {
+                const Icon = CATEGORY_ICON_MAP[shop.category ?? ''] ?? Store;
+                const active = selectedShop?.shopId === shop.id;
+                return (
+                  <button
+                    key={shop.id}
+                    onClick={() => {
+                      mapStore.getState().actions.selectShop({
+                        shopId: shop.id, shopName: shop.publicName,
+                        unitId: shop.unitId ?? '', unitCode: shop.unitCode ?? '',
+                        category: shop.category,
+                      });
+                      setMobileSheetOpen(false);
+                    }}
+                    className={`w-full text-left px-5 py-3 border-b border-ink-50 last:border-0 flex items-center gap-3 active:bg-ink-50
+                      ${active ? 'bg-primary-50' : ''}`}
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-primary-50 border border-primary-100 flex items-center justify-center flex-shrink-0">
+                      <Icon className="w-4 h-4 text-primary-600" strokeWidth={2} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-ink-900 truncate">{shop.publicName}</p>
+                      <p className="text-[11px] text-ink-500 truncate">
+                        {shop.category}{shop.unitCode && ` · ${shop.unitCode}`}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
