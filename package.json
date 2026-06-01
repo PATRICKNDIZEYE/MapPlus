@@ -4,6 +4,7 @@
   "scripts": {
     "boot": "bash scripts/dev.sh",
     "dev": "turbo dev",
+    "migrate": "node scripts/migrate.js",
     "build": "turbo build",
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
