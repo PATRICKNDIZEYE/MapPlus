@@ -40,9 +40,9 @@ export default function PlatformOrgsPage() {
             </button>
           </div>
           {orgs.isLoading ? (
-            <div className="px-5 py-10 text-center text-sm text-ink-500"><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Loading…</div>
+            <div className="min-h-[220px] flex flex-col items-center justify-center text-sm text-ink-500"><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Loading…</div>
           ) : !orgs.data?.length ? (
-            <div className="px-5 py-10 text-center text-sm text-ink-500">
+            <div className="min-h-[220px] flex flex-col items-center justify-center text-sm text-ink-500">
               <Building2 className="w-6 h-6 mx-auto text-ink-300 mb-2" strokeWidth={1.5} />
               No mall operators yet.
             </div>
@@ -76,9 +76,9 @@ export default function PlatformOrgsPage() {
             </button>
           </div>
           {buildings.isLoading ? (
-            <div className="px-5 py-10 text-center text-sm text-ink-500"><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Loading…</div>
+            <div className="min-h-[220px] flex flex-col items-center justify-center text-sm text-ink-500"><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Loading…</div>
           ) : !buildings.data?.length ? (
-            <div className="px-5 py-10 text-center text-sm text-ink-500">
+            <div className="min-h-[220px] flex flex-col items-center justify-center text-sm text-ink-500">
               <Building2 className="w-6 h-6 mx-auto text-ink-300 mb-2" strokeWidth={1.5} />
               Create an org first, then add its first building.
             </div>

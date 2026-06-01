@@ -59,14 +59,14 @@ export default function MallDemandPage() {
         </div>
 
         {clusters.isLoading ? (
-          <div className="px-5 py-12 text-center text-sm text-ink-500"><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Clustering queries with embeddings…</div>
+          <div className="min-h-[220px] flex flex-col items-center justify-center text-sm text-ink-500"><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Clustering queries with embeddings…</div>
         ) : clusters.error ? (
           <div className="px-5 py-12 text-center text-sm text-danger-700">
             <AlertCircle className="w-5 h-5 mx-auto mb-2" />
             {clusters.error.message}
           </div>
         ) : !clusters.data?.length ? (
-          <div className="px-5 py-12 text-center text-sm text-ink-500">
+          <div className="min-h-[220px] flex flex-col items-center justify-center text-sm text-ink-500">
             <Search className="w-6 h-6 mx-auto text-ink-300 mb-2" strokeWidth={1.5} />
             No failed searches in this window. Either every shopper finds what they want — or no one is searching.
           </div>

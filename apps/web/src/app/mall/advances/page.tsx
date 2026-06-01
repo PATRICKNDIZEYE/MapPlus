@@ -27,9 +27,9 @@ export default function AdminAdvancesPage() {
 
       <div className="card overflow-hidden">
         {pending.isLoading ? (
-          <div className="px-5 py-12 text-center text-sm text-ink-500"><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Loading…</div>
+          <div className="min-h-[220px] flex flex-col items-center justify-center text-sm text-ink-500"><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Loading…</div>
         ) : !pending.data?.length ? (
-          <div className="px-5 py-12 text-center text-sm text-ink-500">
+          <div className="min-h-[220px] flex flex-col items-center justify-center text-sm text-ink-500">
             <TrendingUp className="w-6 h-6 mx-auto text-ink-300 mb-2" strokeWidth={1.5} />
             No pending requests. New requests will appear here for review.
           </div>

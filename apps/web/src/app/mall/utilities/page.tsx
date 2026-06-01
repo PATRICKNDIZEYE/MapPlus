@@ -41,9 +41,9 @@ export default function AdminUtilitiesPage() {
           <h2 className="text-sm font-semibold text-ink-900">All bills</h2>
         </div>
         {list.isLoading ? (
-          <div className="px-6 py-12 text-center text-sm text-ink-500"><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Loading…</div>
+          <div className="min-h-[220px] flex flex-col items-center justify-center text-sm text-ink-500"><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Loading…</div>
         ) : !list.data?.length ? (
-          <div className="px-6 py-12 text-center text-sm text-ink-500">
+          <div className="min-h-[220px] flex flex-col items-center justify-center text-sm text-ink-500">
             <Receipt className="w-6 h-6 mx-auto mb-2 text-ink-300" strokeWidth={1.5} />
             No utility bills yet. Use the split tool to allocate a building-wide cost across tenants.
           </div>

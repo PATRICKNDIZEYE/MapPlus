@@ -53,9 +53,9 @@ export default function AdminIncidentsPage() {
 
       <div className="card overflow-hidden">
         {list.isLoading ? (
-          <div className="px-6 py-12 text-center text-sm text-ink-500"><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Loading…</div>
+          <div className="min-h-[220px] flex flex-col items-center justify-center text-sm text-ink-500"><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Loading…</div>
         ) : !list.data?.length ? (
-          <div className="px-6 py-12 text-center text-sm text-ink-500">
+          <div className="min-h-[220px] flex flex-col items-center justify-center text-sm text-ink-500">
             <Shield className="w-6 h-6 mx-auto mb-2 text-ink-300" strokeWidth={1.5} />
             No incidents reported.
           </div>

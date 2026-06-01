@@ -79,9 +79,9 @@ export default function AdminRentPage() {
           <h2 className="text-sm font-semibold text-ink-900">Payment periods</h2>
         </div>
         {list.isLoading ? (
-          <div className="px-6 py-12 text-center text-sm text-ink-500"><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Loading…</div>
+          <div className="min-h-[220px] flex flex-col items-center justify-center text-sm text-ink-500"><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Loading…</div>
         ) : !list.data?.length ? (
-          <div className="px-6 py-12 text-center text-sm text-ink-500">No rent periods recorded yet.</div>
+          <div className="min-h-[220px] flex flex-col items-center justify-center text-sm text-ink-500">No rent periods recorded yet.</div>
         ) : (
           <table className="w-full text-sm">
             <thead>

@@ -40,7 +40,7 @@ export default function TenantAdvancePage() {
   }
 
   if (eligibility.isLoading) {
-    return <div className="px-8 py-7 text-sm text-ink-500"><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Loading…</div>;
+    return <div className="px-8 py-7 min-h-[60vh] flex items-center justify-center text-sm text-ink-500"><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Loading…</div>;
   }
 
   const e = eligibility.data;
@@ -115,9 +115,9 @@ export default function TenantAdvancePage() {
           <h2 className="text-sm font-semibold text-ink-900">Advance history</h2>
         </div>
         {myAdvances.isLoading ? (
-          <div className="px-5 py-10 text-center text-sm text-ink-500"><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Loading…</div>
+          <div className="min-h-[220px] flex flex-col items-center justify-center text-sm text-ink-500"><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Loading…</div>
         ) : !myAdvances.data?.length ? (
-          <div className="px-5 py-10 text-center text-sm text-ink-500">No advances yet.</div>
+          <div className="min-h-[220px] flex flex-col items-center justify-center text-sm text-ink-500">No advances yet.</div>
         ) : (
           <ul className="divide-y divide-ink-100">
             {myAdvances.data.map((a) => <AdvanceRow key={a.id} advance={a} />)}
