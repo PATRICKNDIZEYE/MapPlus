@@ -2,6 +2,10 @@ export default () => ({
   nodeEnv: process.env['NODE_ENV'] ?? 'development',
   port: parseInt(process.env['API_PORT'] ?? '3001', 10),
   webUrl: process.env['WEB_URL'] ?? 'http://localhost:3000',
+  apiPublicUrl:
+    process.env['API_PUBLIC_URL']
+    ?? (process.env['RAILWAY_PUBLIC_DOMAIN'] ? `https://${process.env['RAILWAY_PUBLIC_DOMAIN']}` : null)
+    ?? 'http://localhost:3001',
 
   database: {
     url: process.env['DATABASE_URL'] ?? 'postgresql://mapplus:mapplus_dev@localhost:5432/mapplus',

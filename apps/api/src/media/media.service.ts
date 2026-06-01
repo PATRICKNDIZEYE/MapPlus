@@ -1,6 +1,6 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { join, extname } from 'path';
+import { join } from 'path';
 import { writeFile, unlink, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import { randomUUID } from 'crypto';
@@ -9,7 +9,6 @@ import {
   PutObjectCommand,
   DeleteObjectCommand,
 } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 const ALLOWED_MIME = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 const MAX_BYTES = 4 * 1024 * 1024; // 4 MB hard limit (client compresses to ~800 KB first)
@@ -17,24 +16,36 @@ const MAX_BYTES = 4 * 1024 * 1024; // 4 MB hard limit (client compresses to ~800
 @Injectable()
 export class MediaService {
   private readonly logger = new Logger(MediaService.name);
-  private readonly isDev: boolean;
   private readonly uploadsDir: string;
+  private readonly apiPublicUrl: string;
   private s3: S3Client | null = null;
+  private s3Bucket: string | null = null;
+  private cdnUrl: string | null   = null;
 
   constructor(private config: ConfigService) {
-    this.isDev    = config.get<string>('nodeEnv') !== 'production';
-    this.uploadsDir = join(process.cwd(), 'uploads');
+    this.uploadsDir   = join(process.cwd(), 'uploads');
+    this.apiPublicUrl = config.get<string>('apiPublicUrl') ?? 'http://localhost:3001';
 
-    if (!this.isDev) {
+    // Only initialise S3 when BOTH endpoint and access keys are configured —
+    // not based on NODE_ENV. This lets a production deploy without S3
+    // credentials gracefully fall back to local filesystem storage instead
+    // of crashing on every upload attempt.
+    const endpoint  = config.get<string>('storage.endpoint');
+    const accessKey = config.get<string>('storage.accessKey');
+    const secretKey = config.get<string>('storage.secretKey');
+    const bucket    = config.get<string>('storage.bucket');
+    if (endpoint && accessKey && secretKey && bucket) {
       this.s3 = new S3Client({
         region:   config.get<string>('storage.region') ?? 'auto',
-        endpoint: config.get<string>('storage.endpoint'),
-        credentials: {
-          accessKeyId:     config.get<string>('storage.accessKey')!,
-          secretAccessKey: config.get<string>('storage.secretKey')!,
-        },
-        forcePathStyle: true, // required for MinIO
+        endpoint,
+        credentials: { accessKeyId: accessKey, secretAccessKey: secretKey },
+        forcePathStyle: true, // required for MinIO + Cloudflare R2
       });
+      this.s3Bucket = bucket;
+      this.cdnUrl   = config.get<string>('cdn.url') ?? null;
+      this.logger.log(`Media: S3-compatible storage configured (${endpoint})`);
+    } else {
+      this.logger.log('Media: S3 credentials not set — using local filesystem');
     }
   }
 
@@ -52,24 +63,24 @@ export class MediaService {
     const ext      = mimeType.split('/')[1]!.replace('jpeg', 'jpg');
     const filename = `${prefix}-${randomUUID()}.${ext}`;
 
-    if (this.isDev) {
-      return this.saveToFilesystem(buffer, filename);
+    if (this.s3 && this.s3Bucket) {
+      return this.saveToS3(buffer, filename, mimeType);
     }
-    return this.saveToS3(buffer, filename, mimeType);
+    return this.saveToFilesystem(buffer, filename);
   }
 
   /** Delete a previously saved file by its URL. Silently ignores missing files. */
   async deleteFile(url: string | null): Promise<void> {
     if (!url) return;
     try {
-      if (this.isDev) {
+      if (url.includes('/uploads/')) {
         const filename = url.split('/uploads/')[1];
         if (filename) await unlink(join(this.uploadsDir, filename));
-      } else {
+      } else if (this.s3 && this.s3Bucket) {
         const key = url.split('/').pop();
-        if (!key || !this.s3) return;
+        if (!key) return;
         await this.s3.send(new DeleteObjectCommand({
-          Bucket: this.config.get('storage.bucket'),
+          Bucket: this.s3Bucket,
           Key:    key,
         }));
       }
@@ -85,21 +96,18 @@ export class MediaService {
       await mkdir(this.uploadsDir, { recursive: true });
     }
     await writeFile(join(this.uploadsDir, filename), buffer);
-    const apiUrl = this.config.get<string>('storage.endpoint') ?? 'http://localhost:3001';
-    // In dev the API serves /uploads/* via ServeStaticModule
-    return `http://localhost:3001/uploads/${filename}`;
+    // URL must be reachable from the browser — use the configured public API URL.
+    return `${this.apiPublicUrl.replace(/\/$/, '')}/uploads/${filename}`;
   }
 
   private async saveToS3(buffer: Buffer, filename: string, mimeType: string): Promise<string> {
-    const bucket = this.config.get<string>('storage.bucket')!;
     await this.s3!.send(new PutObjectCommand({
-      Bucket:      bucket,
+      Bucket:      this.s3Bucket!,
       Key:         filename,
       Body:        buffer,
       ContentType: mimeType,
-      ACL:         'public-read' as any,
+      ACL:         'public-read' as 'public-read',
     }));
-    const cdn = this.config.get<string>('cdn.url');
-    return `${cdn}/${filename}`;
+    return this.cdnUrl ? `${this.cdnUrl}/${filename}` : `${this.s3Bucket}/${filename}`;
   }
 }

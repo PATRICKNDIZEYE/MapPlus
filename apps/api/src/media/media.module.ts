@@ -11,17 +11,14 @@ import { MediaRouter } from './media.router';
     ServeStaticModule.forRootAsync({
       imports:  [ConfigModule],
       inject:   [ConfigService],
-      useFactory: (cfg: ConfigService) => {
-        // Only serve /uploads/* locally in development
-        if (cfg.get('nodeEnv') !== 'production') {
-          return [{
-            rootPath:     join(process.cwd(), 'uploads'),
-            serveRoot:    '/uploads',
-            serveStaticOptions: { index: false },
-          }];
-        }
-        return [];
-      },
+      // Always serve /uploads/* — in production this is the fallback when no
+      // S3 credentials are configured. Files survive only as long as the
+      // container does, but the upload flow works end-to-end for demos.
+      useFactory: () => [{
+        rootPath:     join(process.cwd(), 'uploads'),
+        serveRoot:    '/uploads',
+        serveStaticOptions: { index: false },
+      }],
     }),
   ],
   providers: [MediaService, MediaRouter],

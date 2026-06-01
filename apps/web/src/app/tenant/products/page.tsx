@@ -137,7 +137,12 @@ function ShopProductSection({
         </thead>
         <tbody>
           {sorted.map((p, i) => (
-            <tr key={p.id} className="border-b border-ink-50 hover:bg-ink-50/60 transition-colors">
+            <tr
+              key={p.id}
+              onClick={() => onEdit(p)}
+              className="border-b border-ink-50 hover:bg-ink-50/60 transition-colors cursor-pointer"
+              title="Click to view stock, price, and details"
+            >
               <td className="px-5 py-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-ink-100 overflow-hidden flex-shrink-0 relative">
@@ -164,7 +169,7 @@ function ShopProductSection({
                   ? <Badge variant="green">Published</Badge>
                   : <Badge variant="gray">Draft</Badge>}
               </td>
-              <td className="px-5 py-3 text-right">
+              <td className="px-5 py-3 text-right" onClick={(e) => e.stopPropagation()}>
                 <div className="inline-flex items-center gap-1">
                   <button onClick={() => move(i, -1)} disabled={i === 0 || reorder.isPending}
                     className="w-7 h-7 rounded-md hover:bg-ink-100 flex items-center justify-center text-ink-500 disabled:opacity-30"
