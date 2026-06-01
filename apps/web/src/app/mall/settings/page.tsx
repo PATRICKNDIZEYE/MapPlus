@@ -304,7 +304,7 @@ export default function SettingsPage() {
 
 function Row({
   label, icon: Icon, children,
-}: { label: string; icon: React.ComponentType<{ className?: string; strokeWidth?: number }>; children: React.ReactNode }) {
+}: { label: string; icon: React.ElementType; children: React.ReactNode }) {
   return (
     <div className="flex items-start gap-2">
       <Icon className="w-3.5 h-3.5 text-ink-400 mt-0.5 flex-shrink-0" strokeWidth={2} />

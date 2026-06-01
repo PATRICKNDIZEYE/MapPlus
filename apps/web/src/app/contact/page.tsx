@@ -78,7 +78,7 @@ export default function ContactPage() {
 function Tile({
   icon: Icon, label, value, href, sub,
 }: {
-  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  icon: React.ElementType;
   label: string; value: string; href: string; sub: string;
 }) {
   return (

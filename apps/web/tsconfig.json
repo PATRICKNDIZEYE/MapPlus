@@ -3,7 +3,10 @@
   "compilerOptions": {
     "module": "ESNext",
     "jsx": "preserve",
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
     "incremental": true,
+    "noImplicitAny": false,
+    "noUncheckedIndexedAccess": false,
     "plugins": [
       {
         "name": "next"

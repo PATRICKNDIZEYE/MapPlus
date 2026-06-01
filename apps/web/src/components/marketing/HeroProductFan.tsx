@@ -9,7 +9,7 @@ import {
 
 interface CardSpec {
   badge: string;
-  icon:  React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  icon:  React.ElementType;
   iconColor: string;     // tailwind class for the icon container
   title: string;
   body:  string;

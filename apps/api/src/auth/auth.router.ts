@@ -54,7 +54,9 @@ export class AuthRouter {
           this.auth.resetPasswordWithToken(input.token, input.newPassword),
         ),
 
-      me: protectedProcedure.query(({ ctx }) => this.auth.getProfile(ctx.user.sub)),
+      me: protectedProcedure.query(({ ctx }: { ctx: { user: { sub: string } } }) =>
+        this.auth.getProfile(ctx.user.sub),
+      ),
 
       updateProfile: protectedProcedure
         .input(
@@ -63,10 +65,10 @@ export class AuthRouter {
             lastName: z.string().max(100).nullable().optional(),
           }),
         )
-        .mutation(({ ctx, input }) =>
-          this.auth.updateProfile(ctx.user.sub, {
-            firstName: input.firstName ?? null,
-            lastName: input.lastName ?? null,
+        .mutation((opts: { ctx: { user: { sub: string } }; input: { firstName?: string | null; lastName?: string | null } }) =>
+          this.auth.updateProfile(opts.ctx.user.sub, {
+            firstName: opts.input.firstName ?? null,
+            lastName: opts.input.lastName ?? null,
           }),
         ),
 
@@ -77,8 +79,8 @@ export class AuthRouter {
             newPassword: z.string().min(8).max(200),
           }),
         )
-        .mutation(({ ctx, input }) =>
-          this.auth.changePassword(ctx.user.sub, input.currentPassword, input.newPassword),
+        .mutation((opts: { ctx: { user: { sub: string } }; input: { currentPassword: string; newPassword: string } }) =>
+          this.auth.changePassword(opts.ctx.user.sub, opts.input.currentPassword, opts.input.newPassword),
         ),
     });
   }

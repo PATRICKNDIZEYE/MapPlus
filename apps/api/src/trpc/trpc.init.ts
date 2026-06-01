@@ -17,8 +17,10 @@ const t = initTRPC.context<TrpcContext>().create({
 export const router = t.router;
 export const publicProcedure = t.procedure;
 
-// TS2742 suppression: tRPC middleware procedures infer complex express types.
-// Safe to cast — the server app doesn't emit declaration files.
+// TS2742 suppression: tRPC middleware procedures infer complex express types
+// that can't be named without their full import graph. Cast to `any` so the
+// client-facing AppRouter type stays simple; the strict shape comes from
+// each procedure's .input(z.…) + service return type at call sites.
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 export const protectedProcedure = t.procedure.use(({ ctx, next }) => {

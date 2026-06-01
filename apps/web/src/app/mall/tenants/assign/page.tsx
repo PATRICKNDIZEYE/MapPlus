@@ -18,7 +18,7 @@ const CATEGORIES = [
 
 type Step = 1 | 2 | 3 | 4;
 
-const STEPS: Array<{ n: Step; label: string; sub: string; icon: React.ComponentType<{ className?: string; strokeWidth?: number }> }> = [
+const STEPS: Array<{ n: Step; label: string; sub: string; icon: React.ElementType }> = [
   { n: 1, label: 'Premises',   sub: 'Pick a vacant unit',    icon: Building2 },
   { n: 2, label: 'Tenant',     sub: 'Identity & contact',    icon: User       },
   { n: 3, label: 'Lease',      sub: 'Terms & financials',    icon: Banknote   },

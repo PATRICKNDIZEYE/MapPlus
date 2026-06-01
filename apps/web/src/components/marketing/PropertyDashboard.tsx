@@ -328,7 +328,7 @@ function Counter({ label, value, accent }: { label: string; value: string; accen
 
 function PanelHeader({
   label, hint, icon: Icon,
-}: { label: string; hint?: string; icon?: React.ComponentType<{ className?: string; strokeWidth?: number }> }) {
+}: { label: string; hint?: string; icon?: React.ElementType }) {
   return (
     <div className="flex items-center justify-between">
       <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-700 flex items-center gap-1.5">

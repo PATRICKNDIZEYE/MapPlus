@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/Badge';
 
 type Tab = 'overview' | 'payments' | 'traffic' | 'catalog' | 'lease';
 
-const TAB_LIST: Array<{ key: Tab; label: string; icon: React.ComponentType<{ className?: string; strokeWidth?: number }> }> = [
+const TAB_LIST: Array<{ key: Tab; label: string; icon: React.ElementType }> = [
   { key: 'overview', label: 'Overview', icon: Sparkles    },
   { key: 'payments', label: 'Payments', icon: Receipt     },
   { key: 'traffic',  label: 'Traffic',  icon: BarChart3   },
@@ -491,7 +491,7 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 
 function Stat({
   label, value, sub, accent, icon: Icon,
-}: { label: string; value: string; sub: string; accent?: 'danger'; icon?: React.ComponentType<{ className?: string; strokeWidth?: number }> }) {
+}: { label: string; value: string; sub: string; accent?: 'danger'; icon?: React.ElementType }) {
   return (
     <div className="card px-4 py-3.5">
       <div className="flex items-center gap-1.5 mb-1.5">
@@ -521,7 +521,7 @@ function Row({
 
 function ContactRow({
   icon: Icon, value, href,
-}: { icon: React.ComponentType<{ className?: string; strokeWidth?: number }>; value: string | null; href: string | null }) {
+}: { icon: React.ElementType; value: string | null; href: string | null }) {
   if (!value) return (
     <div className="flex items-center gap-2.5 py-1.5 text-ink-300">
       <Icon className="w-3.5 h-3.5" strokeWidth={2} />

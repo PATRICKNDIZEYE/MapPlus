@@ -80,7 +80,7 @@ export default function AboutPage() {
 
 function Stat({
   icon: Icon, label, value, sub,
-}: { icon: React.ComponentType<{ className?: string; strokeWidth?: number }>; label: string; value: string; sub: string }) {
+}: { icon: React.ElementType; label: string; value: string; sub: string }) {
   return (
     <div className="bg-white p-6">
       <div className="flex items-center gap-2 mb-3">
