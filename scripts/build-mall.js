@@ -16,11 +16,16 @@
  */
 
 const path  = require('path');
-const { Client } = require(path.resolve(__dirname, '../node_modules/.pnpm/pg@8.21.0/node_modules/pg'));
-const { config: loadEnv } = require(path.resolve(__dirname, '../node_modules/.pnpm/dotenv@16.4.5/node_modules/dotenv'));
+const { createRequire } = require('module');
+
+// Resolve pg + dotenv from apps/api workspace (pnpm doesn't hoist).
+const apiRequire = createRequire(path.resolve(__dirname, '..', 'apps', 'api', 'package.json'));
+const { Client } = apiRequire('pg');
+const { config: loadEnv } = apiRequire('dotenv');
 
 loadEnv({ path: path.resolve(__dirname, '../.env') });
 const DB = process.env.DATABASE_URL ?? 'postgresql://ndizeye@localhost:5434/mapplus';
+const NEEDS_SSL = /neon\.tech|sslmode=require/.test(DB);
 
 // ── Geographic constants (must match FloorPlanViewer) ─────────────────────────
 const CX  = 30.059888;
@@ -369,7 +374,10 @@ function pickShopName(cat, seed) {
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 async function main() {
-  const client = new Client({ connectionString: DB });
+  const client = new Client({
+    connectionString: DB,
+    ssl: NEEDS_SSL ? { rejectUnauthorized: false } : undefined,
+  });
   await client.connect();
 
   try {
