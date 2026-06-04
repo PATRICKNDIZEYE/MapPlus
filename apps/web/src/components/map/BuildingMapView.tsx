@@ -1,20 +1,28 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
+import type maplibregl from 'maplibre-gl';
 import Image from 'next/image';
 import Link from 'next/link';
 import { trpc } from '@/lib/trpc';
-import { useMapActions, useActiveFloorId, useSelectedShop, useRouteVisible, useMapStore, useMapStore as mapStore } from '@/store/map.store';
+import {
+  useMapActions, useActiveFloorId, useSelectedShop, useRouteVisible, useMapStore,
+  useMapStore as mapStore, useUserAnchor, useRouteDestinationShopId,
+} from '@/store/map.store';
 import { FloorSelector } from './FloorSelector';
 import { SearchBar } from '@/components/search/SearchBar';
 import { ShopPanel } from './ShopPanel';
 import { DirectionsPanel } from './DirectionsPanel';
 import { MallHero } from './MallHero';
 import { TrendingStrip } from './TrendingStrip';
+import { EntrancePicker } from './EntrancePicker';
+import { deriveEntrances } from './entrances';
+import { buildNavGrid, findPath, centralVerticalPoint } from './pathfinding';
 import {
-  ArrowLeft, Menu, QrCode, Building2, ChevronUp, X,
+  ArrowLeft, Menu, QrCode, Building2, ChevronUp, X, DoorOpen,
   Laptop2, Shirt, Utensils, Pill, Banknote, Sparkles, Dumbbell, Clapperboard, Store,
+  RotateCcw, RotateCw,
 } from 'lucide-react';
 import { BrandedLoader } from '@/components/ui/BrandedLoader';
 
@@ -41,12 +49,25 @@ interface BuildingMapViewProps {
 }
 
 export function BuildingMapView({ buildingSlug, initialFloorId }: BuildingMapViewProps) {
-  const { setActiveBuilding, setActiveFloor } = useMapActions();
+  const { setActiveBuilding, setActiveFloor, clearRoute } = useMapActions();
   const activeFloorId = useActiveFloorId();
   const selectedShop  = useSelectedShop();
   const routeVisible  = useRouteVisible();
+  const userAnchor    = useUserAnchor();
+  const routeDestinationShopId = useRouteDestinationShopId();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
+  const [pickerDismissed, setPickerDismissed] = useState(false);
+  const mapRef = useRef<maplibregl.Map | null>(null);
+
+  const rotateBy = (deg: number) => {
+    const m = mapRef.current; if (!m) return;
+    m.easeTo({ bearing: m.getBearing() + deg, duration: 350 });
+  };
+  const resetView = () => {
+    const m = mapRef.current; if (!m) return;
+    m.easeTo({ bearing: 0, pitch: 28, duration: 450 });
+  };
 
   const { data: building, isLoading: loadingBuilding } =
     trpc.buildings.bySlug.useQuery({ slug: buildingSlug });
@@ -64,6 +85,13 @@ export function BuildingMapView({ buildingSlug, initialFloorId }: BuildingMapVie
     { enabled: !!building?.id }
   );
 
+  // Destination shop info — needed for multi-floor routing so we can
+  // detect whether the user is currently viewing the destination floor.
+  const { data: destShop } = trpc.shops.byId.useQuery(
+    { id: routeDestinationShopId ?? '' },
+    { enabled: !!routeDestinationShopId },
+  );
+
   useEffect(() => {
     if (building) setActiveBuilding(building.id);
   }, [building, setActiveBuilding]);
@@ -75,6 +103,127 @@ export function BuildingMapView({ buildingSlug, initialFloorId }: BuildingMapVie
       : floors.find((f) => f.floorNumber === 0) ?? floors[0];
     if (target) setActiveFloor(target.id, target.floorNumber);
   }, [floors, initialFloorId, setActiveFloor]);
+
+  // Derived map data — must live above the early returns so React sees the
+  // same hook order on every render.
+  const entrances = useMemo(
+    () => (floorGeoJSON ? deriveEntrances(floorGeoJSON) : []),
+    [floorGeoJSON],
+  );
+
+  // Navigation grid: built once per floor change. Unit polygons are
+  // marked blocked, everything else is corridor.
+  const navGrid = useMemo(
+    () => (floorGeoJSON ? buildNavGrid(floorGeoJSON) : null),
+    [floorGeoJSON],
+  );
+
+  // Multi-floor route logic.
+  //
+  // The route can span two floors: ORIGIN (where the user entered — always
+  // ground floor for now) and DESTINATION (where the shop lives). When
+  // they differ we treat the building's central escalator as the hand-off
+  // point — a single lng/lat that's vertically aligned across all floors.
+  //
+  //   Same floor (origin == destination):
+  //     route = entrance → shop centroid (single A* pass)
+  //
+  //   Cross floor:
+  //     leg A (origin floor): entrance → central escalator
+  //     leg B (destination floor): central escalator → shop centroid
+  //   The map shows ONE leg at a time depending on which floor is
+  //   currently active; switching floors via the floor selector flips
+  //   between them.
+  const routeCoordinates = useMemo<[number, number][] | undefined>(() => {
+    if (!routeVisible || !userAnchor || !routeDestinationShopId || !floorGeoJSON || !navGrid || !destShop) return undefined;
+
+    // Same floor as destination (the simple, single-A* case).
+    const isDestFloor = floorGeoJSON.floorId === destShop.floorId;
+    // Origin floor for now = ground (floorNumber 0). Anchor coords are
+    // ONLY meaningful on this floor.
+    const isOriginFloor = floorGeoJSON.floorNumber === 0;
+
+    const vp = centralVerticalPoint(floorGeoJSON);
+
+    // Helper — centroid of the destination shop's polygon, if it's on
+    // the current floor. Needed for the leg that ends at the shop.
+    const destCentroid = ((): [number, number] | null => {
+      const dest = floorGeoJSON.units.features.find(
+        (f) => f.properties?.shopId === routeDestinationShopId,
+      );
+      if (!dest || dest.geometry?.type !== 'Polygon') return null;
+      const ring = dest.geometry.coordinates[0] as [number, number][];
+      let area = 0, cx = 0, cy = 0;
+      for (let i = 0; i < ring.length - 1; i++) {
+        const [x1, y1] = ring[i]!; const [x2, y2] = ring[i + 1]!;
+        const cross = x1 * y2 - x2 * y1;
+        area += cross; cx += (x1 + x2) * cross; cy += (y1 + y2) * cross;
+      }
+      area /= 2;
+      return area ? [cx / (6 * area), cy / (6 * area)] : ring[0]!;
+    })();
+
+    // Case 1 — single-floor route (origin == destination).
+    if (isOriginFloor && isDestFloor && destCentroid) {
+      return findPath(userAnchor.coordinates, destCentroid, navGrid) ?? undefined;
+    }
+
+    // Case 2 — leg A: entrance → escalator on origin floor.
+    if (isOriginFloor && !isDestFloor && vp) {
+      return findPath(userAnchor.coordinates, vp, navGrid) ?? undefined;
+    }
+
+    // Case 3 — leg B: escalator → shop on destination floor.
+    if (isDestFloor && !isOriginFloor && vp && destCentroid) {
+      return findPath(vp, destCentroid, navGrid) ?? undefined;
+    }
+
+    // Intermediate floor that's neither origin nor destination — nothing
+    // to draw here.
+    return undefined;
+  }, [routeVisible, userAnchor, routeDestinationShopId, floorGeoJSON, navGrid, destShop]);
+
+  // Visual escalator pin at the central vertical point, only when the
+  // active route is cross-floor. Tells the user "this is where you
+  // change floors" — and is the same lng/lat on every floor so it
+  // anchors leg-A and leg-B in space.
+  const escalatorMarker = useMemo<{
+    coordinates: [number, number]; direction: 'up' | 'down'; targetLabel: string;
+  } | null>(() => {
+    if (!routeVisible || !destShop || !floorGeoJSON || !floors) return null;
+    const active = floors.find((f) => f.id === activeFloorId);
+    if (!active) return null;
+    const destFloorNum = destShop.floorNumber ?? 0;
+    if (destFloorNum === 0) return null; // single-floor route — no escalator needed
+    const vp = centralVerticalPoint(floorGeoJSON);
+    if (!vp) return null;
+    if (active.floorNumber === 0) {
+      return { coordinates: vp, direction: 'up', targetLabel: destShop.floorName ?? `Level ${destFloorNum}` };
+    }
+    if (active.id === destShop.floorId) {
+      return { coordinates: vp, direction: 'down', targetLabel: 'Ground' };
+    }
+    return null;
+  }, [routeVisible, destShop, floorGeoJSON, floors, activeFloorId]);
+
+  // Auto-switch the map to the destination floor the moment Directions
+  // are triggered for a cross-floor shop. Tracked with a ref so manual
+  // floor switches afterwards stick (user can scroll back to floor 0 to
+  // review leg A without us yanking them forward again).
+  const autoSwitchedRef = useRef(false);
+  useEffect(() => {
+    if (!routeVisible) { autoSwitchedRef.current = false; return; }
+    if (!destShop || !floors || autoSwitchedRef.current) return;
+    if (destShop.floorId !== activeFloorId) {
+      const target = floors.find((f) => f.id === destShop.floorId);
+      if (target) {
+        setActiveFloor(target.id, target.floorNumber);
+        autoSwitchedRef.current = true;
+      }
+    } else {
+      autoSwitchedRef.current = true;
+    }
+  }, [routeVisible, destShop, floors, activeFloorId, setActiveFloor]);
 
   if (loadingBuilding) return (
     <div className="h-full flex items-center justify-center bg-slate-50">
@@ -95,6 +244,16 @@ export function BuildingMapView({ buildingSlug, initialFloorId }: BuildingMapVie
   );
 
   const activeFloor = floors?.find((f) => f.id === activeFloorId);
+
+  // Show the picker when:
+  //  (a) first visit + ground floor + nothing dismissed yet, OR
+  //  (b) the user just tapped "Directions" but has no entrance set,
+  //      which would otherwise produce an empty route. We re-open the
+  //      picker so they can pick a real origin.
+  const showPicker =
+    activeFloor?.floorNumber === 0 && entrances.length > 0 && !userAnchor && (
+      !pickerDismissed || routeVisible
+    );
 
   return (
     <div className="h-full flex overflow-hidden bg-white">
@@ -223,6 +382,13 @@ export function BuildingMapView({ buildingSlug, initialFloorId }: BuildingMapVie
               floorGeoJSON={floorGeoJSON}
               buildingLat={Number(building.lat ?? -1.9442)}
               buildingLng={Number(building.lng ?? 30.0599)}
+              entrances={activeFloor?.floorNumber === 0 ? entrances : []}
+              userAnchorCoordinates={
+                activeFloor?.floorNumber === 0 ? userAnchor?.coordinates : undefined
+              }
+              routeCoordinates={routeCoordinates}
+              escalatorMarker={escalatorMarker}
+              onMapReady={(m) => { mapRef.current = m; }}
               className="h-full w-full"
             />
           ) : (
@@ -235,12 +401,62 @@ export function BuildingMapView({ buildingSlug, initialFloorId }: BuildingMapVie
           )}
         </div>
 
+        {/* "Your entrance" badge — visible on every floor once picked */}
+        {userAnchor && (
+          <button
+            onClick={() => setPickerDismissed(false)}
+            className="absolute top-[68px] left-3 z-20 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-white shadow-card border border-ink-100 text-[11px] font-semibold text-ink-700 hover:border-primary-200 transition-colors"
+            title="Change entrance"
+          >
+            <DoorOpen className="w-3 h-3 text-primary-600" strokeWidth={2.5} />
+            <span>You: {userAnchor.label}</span>
+          </button>
+        )}
+
+        {/* First-visit entrance picker overlay */}
+        {showPicker && (
+          <EntrancePicker
+            buildingName={building.name}
+            entrances={entrances}
+            onPicked={() => setPickerDismissed(true)}
+            onClose={() => setPickerDismissed(true)}
+          />
+        )}
+
         {/* Floor selector */}
         {floors && floors.length > 1 && (
           <div className="absolute right-4 top-1/2 -translate-y-1/4 z-10">
             <FloorSelector floors={floors} />
           </div>
         )}
+
+        {/* Rotate controls — discoverable on every device. */}
+        <div className="absolute right-4 top-[72px] z-10 flex flex-col gap-1.5">
+          <button
+            type="button"
+            onClick={() => rotateBy(-45)}
+            title="Rotate left"
+            className="w-9 h-9 rounded-xl bg-white shadow-card border border-ink-100 flex items-center justify-center text-ink-700 hover:bg-ink-50 active:scale-95 transition-all"
+          >
+            <RotateCcw className="w-3.5 h-3.5" strokeWidth={2.5} />
+          </button>
+          <button
+            type="button"
+            onClick={resetView}
+            title="Reset view (north up)"
+            className="w-9 h-9 rounded-xl bg-white shadow-card border border-ink-100 flex items-center justify-center text-primary-700 font-extrabold text-[11px] hover:bg-ink-50 active:scale-95 transition-all"
+          >
+            N
+          </button>
+          <button
+            type="button"
+            onClick={() => rotateBy(45)}
+            title="Rotate right"
+            className="w-9 h-9 rounded-xl bg-white shadow-card border border-ink-100 flex items-center justify-center text-ink-700 hover:bg-ink-50 active:scale-95 transition-all"
+          >
+            <RotateCw className="w-3.5 h-3.5" strokeWidth={2.5} />
+          </button>
+        </div>
 
         {/* Bottom building badge */}
         <div className="absolute bottom-6 left-4 z-10">
@@ -253,7 +469,7 @@ export function BuildingMapView({ buildingSlug, initialFloorId }: BuildingMapVie
         {/* Directions panel takes priority when "Guide Me There" was tapped;
             otherwise fall back to the shop info panel. */}
         {routeVisible && selectedShop ? (
-          <DirectionsPanel shopId={selectedShop.shopId} />
+          <DirectionsPanel shopId={selectedShop.shopId} routeCoordinates={routeCoordinates} />
         ) : selectedShop ? (
           <ShopPanel shopId={selectedShop.shopId} />
         ) : null}

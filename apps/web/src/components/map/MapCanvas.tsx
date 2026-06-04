@@ -6,12 +6,30 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import { useMapActions, useSelectedShop } from '@/store/map.store';
 import type { FloorMapGeoJSON } from '@mallguide/shared';
 
+interface EntranceMarker {
+  id:          string;
+  label:       string;
+  coordinates: [number, number];
+  photoUrl:    string;
+}
+
+interface EscalatorMarker {
+  coordinates: [number, number];
+  direction:   'up' | 'down';
+  targetLabel: string; // e.g. "Level 2" or "Ground"
+}
+
 interface MapCanvasProps {
   floorGeoJSON: FloorMapGeoJSON;
   buildingLat: number;
   buildingLng: number;
   routeCoordinates?: [number, number][];
   userAnchorCoordinates?: [number, number];
+  entrances?: EntranceMarker[];
+  /** Floor-change point when a route spans multiple floors. */
+  escalatorMarker?: EscalatorMarker | null;
+  /** Fires once the map is ready — used by parent to drive rotation UI. */
+  onMapReady?: (map: maplibregl.Map) => void;
   className?: string;
 }
 
@@ -78,11 +96,20 @@ export function MapCanvas({
   buildingLng,
   routeCoordinates,
   userAnchorCoordinates,
+  entrances,
+  escalatorMarker,
+  onMapReady,
   className,
 }: MapCanvasProps) {
   const mapRef = useRef<maplibregl.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const selectedMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const entranceMarkersRef = useRef<maplibregl.Marker[]>([]);
+  const userMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const chevronMarkersRef = useRef<maplibregl.Marker[]>([]);
+  const walkingDotRef = useRef<maplibregl.Marker | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const escalatorMarkerRef = useRef<maplibregl.Marker | null>(null);
   const hoveredIdRef = useRef<string | number | null>(null);
   const lowEndRef = useRef<boolean>(false);
   const { selectShop } = useMapActions();
@@ -106,13 +133,21 @@ export function MapCanvas({
       pitch: lowEnd ? 0 : 28,
       bearing: 0,
       attributionControl: false,
-      dragRotate: !lowEnd,
+      // Full 360° rotation: drag with the right mouse button on desktop,
+      // two-finger twist on touch. Lets shoppers spin around to see the
+      // entrance on the far side of the building.
+      dragRotate:      true,
       pitchWithRotate: !lowEnd,
-      touchPitch: false,
+      touchPitch:      !lowEnd,
     });
+    // Some MapLibre versions disable the touch rotate gesture by
+    // default — turn it back on explicitly so two-finger twist works.
+    map.touchZoomRotate.enableRotation();
 
     map.addControl(
-      new maplibregl.NavigationControl({ showCompass: !lowEnd, visualizePitch: !lowEnd }),
+      // Always show the compass — it's the visual affordance that tells
+      // shoppers they can rotate.
+      new maplibregl.NavigationControl({ showCompass: true, visualizePitch: !lowEnd }),
       'bottom-right',
     );
 
@@ -120,7 +155,8 @@ export function MapCanvas({
       addBuildingLayers(map, floorGeoJSON);
       addFloorLayers(map, floorGeoJSON, lowEnd);
       fitMapToFloor(map, floorGeoJSON);
-      if (userAnchorCoordinates) addUserMarker(map, userAnchorCoordinates);
+      // userAnchorCoordinates is handled by the dedicated useEffect that
+      // mounts a DOM marker (mg-user-anchor) — same for entrances.
       if (routeCoordinates?.length) addRoute(map, routeCoordinates);
     });
 
@@ -154,6 +190,7 @@ export function MapCanvas({
     });
 
     mapRef.current = map;
+    onMapReady?.(map);
   }, [buildingLat, buildingLng]); // eslint-disable-line
 
   useEffect(() => {
@@ -249,18 +286,281 @@ export function MapCanvas({
     }
   }, [selectedShop, floorGeoJSON]);
 
+  // Apply (or clear) the route polyline whenever it changes. We defer
+  // until the style is loaded — without that guard, the FIRST time a
+  // user taps Directions can land before MapLibre has finished its
+  // initial layer setup, and the effect silently bails forever.
   useEffect(() => {
     const map = mapRef.current;
-    if (!map?.isStyleLoaded()) return;
-    const src = map.getSource('route') as maplibregl.GeoJSONSource | undefined;
-    const geojson = routeCoordinates?.length
-      ? { type: 'Feature' as const, geometry: { type: 'LineString' as const, coordinates: routeCoordinates }, properties: {} }
-      : { type: 'FeatureCollection' as const, features: [] as any[] };
-    if (src) src.setData(geojson as any);
-    else if (routeCoordinates?.length) addRoute(map, routeCoordinates);
+    if (!map) return;
+
+    const apply = () => {
+      const src = map.getSource('route') as maplibregl.GeoJSONSource | undefined;
+      const geojson = routeCoordinates?.length
+        ? { type: 'Feature' as const, geometry: { type: 'LineString' as const, coordinates: routeCoordinates }, properties: {} }
+        : { type: 'FeatureCollection' as const, features: [] as any[] };
+      if (src) {
+        src.setData(geojson as any);
+      } else if (routeCoordinates?.length) {
+        addRoute(map, routeCoordinates);
+      }
+      // Make sure the route + its dashed overlay sit ABOVE the unit
+      // extrusions, which can otherwise occlude the line in pitched 3D.
+      if (routeCoordinates?.length) {
+        for (const id of ['route-casing', 'route-line', 'route-dash']) {
+          if (map.getLayer(id)) map.moveLayer(id);
+        }
+      }
+    };
+
+    if (map.isStyleLoaded()) apply();
+    else map.once('idle', apply);
   }, [routeCoordinates]);
 
+  // Animated walking dot + on-map turn chevrons. Brings the static
+  // polyline to life — a pulsing brand dot walks the route on a loop,
+  // and chevrons sit at each corner pointing toward the next segment.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const raf = (globalThis as unknown as { requestAnimationFrame: typeof requestAnimationFrame }).requestAnimationFrame;
+    const caf = (globalThis as unknown as { cancelAnimationFrame:  typeof cancelAnimationFrame  }).cancelAnimationFrame;
+
+    const cleanup = () => {
+      if (rafRef.current !== null) { caf(rafRef.current); rafRef.current = null; }
+      if (walkingDotRef.current) { walkingDotRef.current.remove(); walkingDotRef.current = null; }
+      chevronMarkersRef.current.forEach((m) => m.remove());
+      chevronMarkersRef.current = [];
+    };
+    cleanup();
+
+    if (!routeCoordinates || routeCoordinates.length < 2) return;
+
+    const place = () => {
+      const doc = (globalThis as unknown as { document: Document }).document;
+
+      // Cumulative segment lengths (degrees — fine for ratio interpolation).
+      const cum: number[] = [0];
+      for (let i = 1; i < routeCoordinates.length; i++) {
+        const [x1, y1] = routeCoordinates[i - 1]!;
+        const [x2, y2] = routeCoordinates[i]!;
+        cum.push(cum[i - 1]! + Math.hypot(x2 - x1, y2 - y1));
+      }
+      const total = cum[cum.length - 1]!;
+      if (total === 0) return;
+
+      // Chevrons at every interior vertex — skip the entrance start and
+      // the destination end, both of which already have their own
+      // pulsing markers.
+      for (let i = 1; i < routeCoordinates.length - 1; i++) {
+        const at      = routeCoordinates[i]!;
+        const next    = routeCoordinates[i + 1]!;
+        const bearing = bearingFromTo(at, next);
+        const el = doc.createElement('div');
+        el.className = 'mg-route-chevron';
+        el.innerHTML = `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6,15 12,9 18,15"/></svg>`;
+        chevronMarkersRef.current.push(
+          new maplibregl.Marker({
+            element:           el,
+            anchor:            'center',
+            rotationAlignment: 'map',
+            rotation:          bearing,
+          }).setLngLat(at).addTo(map),
+        );
+      }
+
+      // Walking dot — placed at the start, animated along the polyline.
+      const dotEl = doc.createElement('div');
+      dotEl.className = 'mg-route-dot';
+      dotEl.innerHTML = `
+        <span class="mg-route-dot-ring"></span>
+        <span class="mg-route-dot-ring mg-route-dot-ring--delayed"></span>
+        <span class="mg-route-dot-core"></span>
+      `;
+      walkingDotRef.current = new maplibregl.Marker({ element: dotEl, anchor: 'center' })
+        .setLngLat(routeCoordinates[0]!)
+        .addTo(map);
+
+      const DURATION_MS = 3500; // one full pass
+      let startTs: number | null = null;
+      const step = (ts: number) => {
+        if (startTs === null) startTs = ts;
+        const elapsed = (ts - startTs) % DURATION_MS;
+        const t = elapsed / DURATION_MS;
+        const target = t * total;
+        // Find the segment that contains `target`.
+        let i = 1;
+        while (i < cum.length && cum[i]! < target) i++;
+        if (i >= cum.length) i = cum.length - 1;
+        const segLen = cum[i]! - cum[i - 1]!;
+        const frac   = segLen === 0 ? 0 : (target - cum[i - 1]!) / segLen;
+        const [x1, y1] = routeCoordinates[i - 1]!;
+        const [x2, y2] = routeCoordinates[i]!;
+        walkingDotRef.current?.setLngLat([x1 + (x2 - x1) * frac, y1 + (y2 - y1) * frac]);
+        rafRef.current = raf(step);
+      };
+      rafRef.current = raf(step);
+    };
+
+    if (map.isStyleLoaded()) place();
+    else map.once('idle', place);
+
+    return cleanup;
+  }, [routeCoordinates]);
+
+  // Entrance markers (ground floor only). Big, image-backed pins so a
+  // shopper standing in front of the building can spot "their" door
+  // from across the map. Tapping a pin orbits the camera "from that
+  // entrance looking in" — that's how you compare views without
+  // wrestling with MapLibre's right-click rotate gesture.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const place = () => {
+      entranceMarkersRef.current.forEach((m) => m.remove());
+      entranceMarkersRef.current = [];
+      if (!entrances?.length) return;
+
+      // Building centroid — the "look toward" point for every entrance.
+      const center = buildingCentroidFromGeo(floorGeoJSON);
+
+      const doc = (globalThis as unknown as { document: Document }).document;
+      for (const e of entrances) {
+        const el = doc.createElement('div');
+        el.className = 'mg-entrance';
+        el.innerHTML = `
+          <button type="button" class="mg-entrance-btn" title="Look from ${escapeHtml(e.label)}">
+            <span class="mg-entrance-photo" style="background-image:url('${escapeUrl(e.photoUrl)}')"></span>
+            <span class="mg-entrance-pin">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M13 4h3a2 2 0 0 1 2 2v14"></path>
+                <path d="M2 20h3"></path>
+                <path d="M13 20h9"></path>
+                <path d="M10 12v.01"></path>
+                <path d="M13 4.562v16.157a1 1 0 0 1-1.242.97L5 20V5.562a2 2 0 0 1 1.515-1.94l4-1A2 2 0 0 1 13 4.561Z"></path>
+              </svg>
+            </span>
+          </button>
+          <span class="mg-entrance-label">${escapeHtml(e.label)}</span>
+          <span class="mg-entrance-stem"></span>
+        `;
+        const bearing = bearingFromTo(e.coordinates, center);
+        el.querySelector('.mg-entrance-btn')?.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          map.easeTo({
+            center:  e.coordinates,
+            bearing,
+            pitch:   lowEndRef.current ? 0 : 55,
+            zoom:    Math.max(map.getZoom(), 19.8),
+            duration: 1100,
+          });
+        });
+        const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
+          .setLngLat(e.coordinates)
+          .addTo(map);
+        entranceMarkersRef.current.push(marker);
+      }
+    };
+    if (map.isStyleLoaded()) place();
+    else map.once('idle', place);
+  }, [entrances, floorGeoJSON]);
+
+  // Escalator marker — anchors a cross-floor route's transition point.
+  // On the origin floor it says "↑ Level 2"; on the destination floor
+  // it says "↓ Ground" (where you came from).
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const place = () => {
+      if (escalatorMarkerRef.current) {
+        escalatorMarkerRef.current.remove();
+        escalatorMarkerRef.current = null;
+      }
+      if (!escalatorMarker) return;
+      const doc = (globalThis as unknown as { document: Document }).document;
+      const el  = doc.createElement('div');
+      el.className = 'mg-escalator';
+      const arrow = escalatorMarker.direction === 'up' ? '↑' : '↓';
+      const verb  = escalatorMarker.direction === 'up' ? 'Take to' : 'From';
+      el.innerHTML = `
+        <span class="mg-escalator-pin">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m6 9 6-6 6 6"></path>
+            <path d="M12 3v18"></path>
+          </svg>
+        </span>
+        <span class="mg-escalator-label">${arrow} ${escapeHtml(verb)} <strong>${escapeHtml(escalatorMarker.targetLabel)}</strong></span>
+      `;
+      escalatorMarkerRef.current = new maplibregl.Marker({ element: el, anchor: 'bottom' })
+        .setLngLat(escalatorMarker.coordinates)
+        .addTo(map);
+    };
+    if (map.isStyleLoaded()) place();
+    else map.once('idle', place);
+  }, [escalatorMarker]);
+
+  // "You are here" pulse anchored at the user's chosen entrance.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const place = () => {
+      if (userMarkerRef.current) {
+        userMarkerRef.current.remove();
+        userMarkerRef.current = null;
+      }
+      if (!userAnchorCoordinates) return;
+      const doc = (globalThis as unknown as { document: Document }).document;
+      const el  = doc.createElement('div');
+      el.className = 'mg-user-anchor';
+      el.innerHTML = `
+        <span class="mg-user-ring"></span>
+        <span class="mg-user-ring mg-user-ring--delayed"></span>
+        <span class="mg-user-core"></span>
+      `;
+      userMarkerRef.current = new maplibregl.Marker({ element: el, anchor: 'center' })
+        .setLngLat(userAnchorCoordinates)
+        .addTo(map);
+    };
+    if (map.isStyleLoaded()) place();
+    else map.once('idle', place);
+  }, [userAnchorCoordinates]);
+
   return <div ref={containerRef} className={className ?? 'h-full w-full'} />;
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!),
+  );
+}
+
+function escapeUrl(s: string): string {
+  // Only allow https/http/data URLs in inline style backgrounds.
+  if (!/^(https?:|data:)/.test(s)) return '';
+  return s.replace(/["'<>\\]/g, '');
+}
+
+/**
+ * Compass bearing (0=N, 90=E, 180=S, 270=W) from point A to point B.
+ * Building-scale planar approximation — sufficient for the camera fly.
+ */
+function bearingFromTo(a: GeoPoint, b: GeoPoint): number {
+  const dLng = b[0] - a[0];
+  const dLat = b[1] - a[1];
+  let bearing = (Math.atan2(dLng, dLat) * 180) / Math.PI;
+  if (bearing < 0) bearing += 360;
+  return bearing;
+}
+
+function buildingCentroidFromGeo(geo: FloorMapGeoJSON): GeoPoint {
+  let sumLng = 0, sumLat = 0, n = 0;
+  for (const f of geo.units.features) {
+    if (f.geometry?.type !== 'Polygon') continue;
+    for (const [lng, lat] of f.geometry.coordinates[0] as GeoPoint[]) {
+      sumLng += lng; sumLat += lat; n++;
+    }
+  }
+  return n ? [sumLng / n, sumLat / n] : [0, 0];
 }
 
 // ── Building shell + parking ─────────────────────────────────────────────────
@@ -651,22 +951,6 @@ function fitMapToFloor(map: maplibregl.Map, data: FloorMapGeoJSON) {
   );
 }
 
-function addUserMarker(map: maplibregl.Map, coords: [number, number]) {
-  const el = ((globalThis as unknown) as {
-    document: {
-      createElement: (tag: string) => { className: string; style: { cssText: string } };
-    };
-  }).document.createElement('div');
-  el.className = 'user-dot';
-  el.style.cssText = `
-    width: 18px; height: 18px;
-    background: #0ea5e9;
-    border: 3px solid white;
-    border-radius: 50%;
-    box-shadow: 0 0 0 4px rgba(14,165,233,0.25), 0 2px 8px rgba(0,0,0,0.2);
-  `;
-  new maplibregl.Marker({ element: el }).setLngLat(coords).addTo(map);
-}
 
 function polygonCentroid(ring: GeoPoint[]): GeoPoint {
   // Area-weighted centroid of a closed ring (shoelace). For our small
@@ -700,10 +984,40 @@ function addRoute(map: maplibregl.Map, coords: [number, number][]) {
     return;
   }
   map.addSource('route', { type: 'geojson', data });
+  // White halo so the brand-coloured route reads on warm cream + unit colours.
   map.addLayer({ id: 'route-casing', type: 'line', source: 'route',
     layout: { 'line-join': 'round', 'line-cap': 'round' },
-    paint: { 'line-color': '#ffffff', 'line-width': 10 } });
+    paint: { 'line-color': '#ffffff', 'line-width': 9, 'line-opacity': 0.9 } });
   map.addLayer({ id: 'route-line', type: 'line', source: 'route',
     layout: { 'line-join': 'round', 'line-cap': 'round' },
-    paint: { 'line-color': '#0ea5e9', 'line-width': 5 } });
+    paint: { 'line-color': SELECTED_STROKE, 'line-width': 4.5 } });
+  // Animated dashed overlay — gives the line a "walking direction" feel.
+  map.addLayer({ id: 'route-dash', type: 'line', source: 'route',
+    layout: { 'line-join': 'round', 'line-cap': 'round' },
+    paint: {
+      'line-color': '#C9A4E5',
+      'line-width': 2.5,
+      'line-dasharray': [0, 2.4],
+    } });
+  animateRouteDash(map);
+}
+
+let routeDashFrame: number | null = null;
+function animateRouteDash(map: maplibregl.Map) {
+  // Cycle line-dasharray to make the brand-coloured dashes appear to
+  // travel along the route — pure visual flourish, no GPS involved.
+  if (routeDashFrame !== null) cancelAnimationFrame(routeDashFrame);
+  const sequence: Array<[number, number]> = [
+    [0, 2.4], [0.4, 2.0], [0.8, 1.6], [1.2, 1.2], [1.6, 0.8], [2.0, 0.4],
+  ];
+  let i = 0;
+  const tick = () => {
+    if (!map.getLayer('route-dash')) { routeDashFrame = null; return; }
+    map.setPaintProperty('route-dash', 'line-dasharray', sequence[i % sequence.length]);
+    i++;
+    routeDashFrame = (globalThis as unknown as { requestAnimationFrame: typeof requestAnimationFrame }).requestAnimationFrame(() => {
+      setTimeout(tick, 95);
+    });
+  };
+  tick();
 }
