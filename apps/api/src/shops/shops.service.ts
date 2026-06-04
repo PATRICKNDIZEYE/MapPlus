@@ -91,6 +91,8 @@ export class ShopsService {
         publicName: shopProfiles.publicName,
         category: shopProfiles.category,
         logoUrl: shopProfiles.logoUrl,
+        coverPhotoUrl: shopProfiles.coverPhotoUrl,
+        unitId: shopProfiles.unitId,
         unitCode: units.unitCode,
         floorId: units.floorId,
         floorName: floors.name,

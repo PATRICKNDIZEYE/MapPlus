@@ -151,13 +151,38 @@ export function ShopPanel({ shopId }: { shopId: string }) {
             {/* Products */}
             {shop.products && shop.products.length > 0 && (
               <div className="border-t border-ink-50 pt-4 mb-4">
-                <p className="text-[10px] font-semibold text-ink-400 uppercase tracking-wider mb-3">Products &amp; Services</p>
-                <div className="space-y-2">
-                  {shop.products.map((p) => (
-                    <div key={p.id} className="flex items-center justify-between">
-                      <span className="text-sm text-ink-700">{p.name}</span>
-                      {p.price && <span className="text-sm font-semibold text-ink-900">{p.price} {p.currency}</span>}
-                    </div>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-[10px] font-semibold text-ink-400 uppercase tracking-wider">Products &amp; Services</p>
+                  <a
+                    href={`/shop/${shop.id}`}
+                    className="text-[10px] font-semibold text-primary-600 hover:text-primary-700"
+                  >
+                    View all →
+                  </a>
+                </div>
+                <div className="flex gap-2.5 overflow-x-auto -mx-5 px-5 pb-1 snap-x snap-mandatory scroll-smooth">
+                  {shop.products.slice(0, 8).map((p) => (
+                    <a
+                      key={p.id}
+                      href={`/shop/${shop.id}`}
+                      className="flex-shrink-0 w-[124px] snap-start group"
+                    >
+                      <div className="relative aspect-square rounded-xl overflow-hidden border border-ink-100 bg-ink-100">
+                        {p.imageUrl ? (
+                          <Image src={p.imageUrl} alt={p.name} fill className="object-cover group-hover:scale-105 transition-transform duration-300" sizes="124px" />
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <Store className="w-6 h-6 text-ink-300" strokeWidth={1.5} />
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-[11px] font-semibold text-ink-900 mt-1.5 line-clamp-1">{p.name}</p>
+                      {p.priceAmount && (
+                        <p className="text-[11px] font-bold text-primary-700 tabular-nums">
+                          {Number(p.priceAmount).toLocaleString('en-RW')} {p.currency ?? 'RWF'}
+                        </p>
+                      )}
+                    </a>
                   ))}
                 </div>
               </div>

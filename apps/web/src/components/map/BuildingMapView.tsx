@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
+import Image from 'next/image';
 import Link from 'next/link';
 import { trpc } from '@/lib/trpc';
 import { useMapActions, useActiveFloorId, useSelectedShop, useRouteVisible, useMapStore, useMapStore as mapStore } from '@/store/map.store';
@@ -9,8 +10,10 @@ import { FloorSelector } from './FloorSelector';
 import { SearchBar } from '@/components/search/SearchBar';
 import { ShopPanel } from './ShopPanel';
 import { DirectionsPanel } from './DirectionsPanel';
+import { MallHero } from './MallHero';
+import { TrendingStrip } from './TrendingStrip';
 import {
-  ArrowLeft, Menu, QrCode, MapPin, Building2, ChevronUp, ChevronDown, X,
+  ArrowLeft, Menu, QrCode, Building2, ChevronUp, X,
   Laptop2, Shirt, Utensils, Pill, Banknote, Sparkles, Dumbbell, Clapperboard, Store,
 } from 'lucide-react';
 
@@ -95,22 +98,31 @@ export function BuildingMapView({ buildingSlug, initialFloorId }: BuildingMapVie
     <div className="h-full flex overflow-hidden bg-white">
 
       {/* ── Left panel — shop directory (desktop only; mobile gets a bottom sheet) ── */}
-      <div className={`hidden md:flex flex-shrink-0 border-r border-gray-100 flex-col bg-white transition-all duration-300 ${sidebarOpen ? 'w-[280px]' : 'w-0 overflow-hidden'}`}>
+      <div className={`hidden md:flex relative flex-shrink-0 border-r border-gray-100 flex-col bg-white transition-all duration-300 ${sidebarOpen ? 'w-[300px]' : 'w-0 overflow-hidden'}`}>
 
-        {/* Panel header */}
-        <div className="px-4 pt-4 pb-3 border-b border-gray-50 flex-shrink-0">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <h2 className="text-sm font-bold text-gray-900">{building.name}</h2>
-              <p className="text-xs text-gray-400 mt-0.5">{shops?.length ?? 0} shops</p>
-            </div>
-            <Link href="/" className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400">
-              <ArrowLeft className="w-4 h-4" strokeWidth={2} />
-            </Link>
-          </div>
+        {/* Back button (floating above the hero) */}
+        <Link
+          href="/"
+          className="absolute top-3 left-3 z-10 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm shadow-card flex items-center justify-center text-ink-700 hover:bg-white transition-colors"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" strokeWidth={2.5} />
+        </Link>
 
-          {/* Floor tabs */}
-          {floors && (
+        {/* Mall hero */}
+        <MallHero
+          name={building.name}
+          coverPhoto={building.coverPhotoUrl}
+          description={building.description}
+          shopCount={shops?.length ?? 0}
+          floorCount={floors?.length ?? 0}
+        />
+
+        {/* Trending strip — the discovery entry point */}
+        {shops && shops.length > 0 && <TrendingStrip shops={shops} />}
+
+        {/* Floor tabs */}
+        {floors && floors.length > 1 && (
+          <div className="px-3 pb-3 flex-shrink-0">
             <div className="flex gap-1 bg-gray-50 p-1 rounded-xl">
               {floors.map((f) => (
                 <button key={f.id}
@@ -121,47 +133,60 @@ export function BuildingMapView({ buildingSlug, initialFloorId }: BuildingMapVie
                 </button>
               ))}
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Shop list */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto border-t border-gray-50">
+          <div className="px-4 pt-3 pb-1.5 flex items-center justify-between">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-ink-400">All shops</p>
+            <span className="text-[10px] text-ink-400 tabular-nums">{shops?.length ?? 0}</span>
+          </div>
           {shops?.length === 0 && (
             <div className="flex flex-col items-center justify-center h-40 text-gray-400 text-sm">
               <Store className="w-8 h-8 text-gray-200 mb-2" strokeWidth={1.5} />
               No shops on this floor
             </div>
           )}
-          {shops?.map((shop) => (
-            <button
-              key={shop.id}
-              onClick={() => {
-                mapStore.getState().actions.selectShop({
-                  shopId: shop.id, shopName: shop.publicName,
-                  unitId: shop.unitId ?? '', unitCode: shop.unitCode ?? '',
-                  category: shop.category,
-                });
-              }}
-              className={`w-full text-left px-4 py-3.5 border-b border-gray-50 last:border-0 hover:bg-gray-50/60 transition-colors flex items-center gap-3
-                ${selectedShop?.shopId === shop.id ? 'bg-primary-50 border-primary-100' : ''}`}
-            >
-              <div className="w-9 h-9 rounded-xl bg-primary-50 border border-primary-100 flex items-center justify-center flex-shrink-0">
-                {(() => { const Icon = CATEGORY_ICON_MAP[shop.category ?? ''] ?? Store; return <Icon className="w-4 h-4 text-primary-600" strokeWidth={2} />; })()}
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-gray-900 truncate">{shop.publicName}</p>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="text-xs text-gray-400 truncate">{shop.category}</span>
-                  {shop.unitCode && (
-                    <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-md font-mono flex-shrink-0">{shop.unitCode}</span>
+          {shops?.map((shop) => {
+            const Icon = CATEGORY_ICON_MAP[shop.category ?? ''] ?? Store;
+            const active = selectedShop?.shopId === shop.id;
+            return (
+              <button
+                key={shop.id}
+                onClick={() => {
+                  mapStore.getState().actions.selectShop({
+                    shopId: shop.id, shopName: shop.publicName,
+                    unitId: shop.unitId ?? '', unitCode: shop.unitCode ?? '',
+                    category: shop.category,
+                  });
+                }}
+                className={`w-full text-left px-4 py-2.5 border-b border-gray-50 last:border-0 hover:bg-gray-50/60 transition-colors flex items-center gap-3
+                  ${active ? 'bg-primary-50/60' : ''}`}
+              >
+                <div className={`w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 relative
+                  ${shop.logoUrl ? 'border border-ink-100' : 'bg-primary-50 border border-primary-100 flex items-center justify-center'}`}>
+                  {shop.logoUrl ? (
+                    <Image src={shop.logoUrl} alt={shop.publicName} fill className="object-cover" sizes="40px" />
+                  ) : (
+                    <Icon className="w-4 h-4 text-primary-600" strokeWidth={2} />
                   )}
                 </div>
-              </div>
-              {selectedShop?.shopId === shop.id && (
-                <div className="w-1.5 h-1.5 rounded-full bg-primary-500 flex-shrink-0 ml-auto" />
-              )}
-            </button>
-          ))}
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-gray-900 truncate">{shop.publicName}</p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="text-xs text-gray-400 truncate">{shop.category}</span>
+                    {shop.unitCode && (
+                      <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-md font-mono flex-shrink-0">{shop.unitCode}</span>
+                    )}
+                  </div>
+                </div>
+                {active && (
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary-500 flex-shrink-0 ml-auto" />
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {/* Footer QR scan hint */}
@@ -272,7 +297,7 @@ export function BuildingMapView({ buildingSlug, initialFloorId }: BuildingMapVie
 
             {/* Floor tabs (compact) */}
             {floors && floors.length > 1 && (
-              <div className="px-5 pb-3 flex gap-1 bg-ink-50 mx-5 rounded-xl p-1 flex-shrink-0">
+              <div className="mx-5 mb-3 flex gap-1 bg-ink-50 rounded-xl p-1 flex-shrink-0">
                 {floors.map((f) => (
                   <button key={f.id}
                     onClick={() => setActiveFloor(f.id, f.floorNumber)}
@@ -281,6 +306,13 @@ export function BuildingMapView({ buildingSlug, initialFloorId }: BuildingMapVie
                     {f.shortName ?? (f.floorNumber === 0 ? 'G' : `L${f.floorNumber}`)}
                   </button>
                 ))}
+              </div>
+            )}
+
+            {/* Trending strip (mobile) */}
+            {shops && shops.length > 0 && (
+              <div className="px-2 flex-shrink-0">
+                <TrendingStrip shops={shops} />
               </div>
             )}
 
@@ -308,8 +340,13 @@ export function BuildingMapView({ buildingSlug, initialFloorId }: BuildingMapVie
                     className={`w-full text-left px-5 py-3 border-b border-ink-50 last:border-0 flex items-center gap-3 active:bg-ink-50
                       ${active ? 'bg-primary-50' : ''}`}
                   >
-                    <div className="w-10 h-10 rounded-xl bg-primary-50 border border-primary-100 flex items-center justify-center flex-shrink-0">
-                      <Icon className="w-4 h-4 text-primary-600" strokeWidth={2} />
+                    <div className={`w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 relative
+                      ${shop.logoUrl ? 'border border-ink-100' : 'bg-primary-50 border border-primary-100 flex items-center justify-center'}`}>
+                      {shop.logoUrl ? (
+                        <Image src={shop.logoUrl} alt={shop.publicName} fill className="object-cover" sizes="40px" />
+                      ) : (
+                        <Icon className="w-4 h-4 text-primary-600" strokeWidth={2} />
+                      )}
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-semibold text-ink-900 truncate">{shop.publicName}</p>

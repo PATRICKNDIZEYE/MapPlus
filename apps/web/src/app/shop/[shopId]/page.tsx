@@ -45,57 +45,87 @@ export default function ShopStorefrontPage() {
   }
 
   const s = shop.data!;
+  const heroSrc = s.coverPhotoUrl
+    ?? 'https://images.unsplash.com/photo-1481437156560-3205f6a55735?w=1600&q=80';
 
   return (
     <div className="min-h-screen bg-ink-50">
-      {/* Top bar */}
-      <header className="bg-white border-b border-ink-100">
-        <div className="max-w-5xl mx-auto px-5 h-14 flex items-center gap-3">
-          <Link href="/" className="text-ink-500 hover:text-ink-900 flex items-center gap-1.5 text-sm">
-            <ArrowLeft className="w-3.5 h-3.5" strokeWidth={2.5} /> Back
-          </Link>
-        </div>
-      </header>
+      {/* Hero — cover photo with shop identity overlaid */}
+      <section className="relative h-[260px] sm:h-[320px] overflow-hidden">
+        <Image
+          src={heroSrc}
+          alt={s.publicName}
+          fill
+          className="object-cover"
+          sizes="100vw"
+          priority
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/20" />
 
-      {/* Shop header */}
-      <section className="bg-white border-b border-ink-100">
-        <div className="max-w-5xl mx-auto px-5 py-6">
-          <div className="flex items-start gap-5">
-            <div className="w-16 h-16 rounded-2xl bg-ink-100 overflow-hidden relative flex-shrink-0">
+        {/* Back button — floating glass pill */}
+        <Link
+          href="/"
+          className="absolute top-4 left-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-md text-white text-xs font-semibold hover:bg-white/25 transition-colors"
+        >
+          <ArrowLeft className="w-3 h-3" strokeWidth={2.5} /> Back
+        </Link>
+
+        {/* Identity row — pinned to the bottom of the hero */}
+        <div className="absolute inset-x-0 bottom-0 px-5 pb-6">
+          <div className="max-w-5xl mx-auto flex items-end gap-4">
+            <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-white bg-white shadow-lg flex-shrink-0 relative">
               {s.logoUrl ? (
-                <Image src={s.logoUrl} alt={s.publicName} fill className="object-cover" sizes="64px" />
+                <Image src={s.logoUrl} alt={s.publicName} fill className="object-cover" sizes="80px" />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-ink-400 text-lg font-bold">
+                <div className="w-full h-full flex items-center justify-center text-ink-700 text-2xl font-extrabold bg-primary-50">
                   {s.publicName.slice(0, 2).toUpperCase()}
                 </div>
               )}
             </div>
-            <div className="flex-1 min-w-0">
-              <h1 className="text-xl font-extrabold tracking-tight text-ink-900">{s.publicName}</h1>
-              {s.category && <p className="text-sm text-ink-500 mt-0.5">{s.category}</p>}
-              {s.description && <p className="text-sm text-ink-600 mt-2 leading-relaxed">{s.description}</p>}
-              <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-ink-500">
-                {s.floorName && (
-                  <span className="inline-flex items-center gap-1">
-                    <MapPin className="w-3 h-3" strokeWidth={2.5} /> {s.floorName} · {s.unitCode}
+            <div className="flex-1 min-w-0 pb-1">
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white drop-shadow-sm">
+                {s.publicName}
+              </h1>
+              <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-white/90">
+                {s.category && (
+                  <span className="px-2 py-0.5 rounded-full bg-white/15 backdrop-blur-sm font-semibold">
+                    {s.category}
                   </span>
                 )}
-                {s.phone && (
-                  <a href={`tel:${s.phone}`} className="inline-flex items-center gap-1 hover:text-ink-900">
-                    <Phone className="w-3 h-3" strokeWidth={2.5} /> {s.phone}
-                  </a>
-                )}
-                {s.whatsapp && (
-                  <a href={`https://wa.me/${s.whatsapp.replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer"
-                    className="inline-flex items-center gap-1 hover:text-ink-900">
-                    <MessageCircle className="w-3 h-3" strokeWidth={2.5} /> WhatsApp
-                  </a>
+                {s.floorName && (
+                  <span className="inline-flex items-center gap-1">
+                    <MapPin className="w-3 h-3" strokeWidth={2.5} /> {s.floorName}{s.unitCode ? ` · ${s.unitCode}` : ''}
+                  </span>
                 )}
               </div>
             </div>
           </div>
         </div>
       </section>
+
+      {/* Description + quick-contact row */}
+      {(s.description || s.phone || s.whatsapp) && (
+        <section className="bg-white border-b border-ink-100">
+          <div className="max-w-5xl mx-auto px-5 py-5">
+            {s.description && (
+              <p className="text-sm text-ink-600 leading-relaxed mb-3">{s.description}</p>
+            )}
+            <div className="flex flex-wrap items-center gap-3 text-xs">
+              {s.phone && (
+                <a href={`tel:${s.phone}`} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-ink-100 text-ink-700 font-semibold hover:bg-ink-200 transition-colors">
+                  <Phone className="w-3 h-3" strokeWidth={2.5} /> {s.phone}
+                </a>
+              )}
+              {s.whatsapp && (
+                <a href={`https://wa.me/${s.whatsapp.replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-success-50 text-success-700 font-semibold hover:bg-success-100 transition-colors">
+                  <MessageCircle className="w-3 h-3" strokeWidth={2.5} /> WhatsApp
+                </a>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Search + product grid */}
       <section className="max-w-5xl mx-auto px-5 py-6">
