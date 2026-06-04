@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import {
   X, Navigation, Phone, MessageCircle, Globe,
-  CheckCircle2, AlertTriangle, Loader2,
+  CheckCircle2, AlertTriangle, Loader2, ShoppingBag, ArrowRight,
   Laptop2, Shirt, Utensils, Pill, Banknote,
   Sparkles, Dumbbell, Clapperboard, Store,
 } from 'lucide-react';
@@ -122,7 +122,19 @@ export function ShopPanel({ shopId }: { shopId: string }) {
               <p className="text-sm text-ink-500 leading-relaxed mb-5">{shop.description}</p>
             )}
 
-            {/* Action buttons */}
+            {/* Primary CTA — Visit storefront */}
+            <a
+              href={`/shop/${shop.id}`}
+              className="group flex items-center justify-between gap-3 mb-3 px-4 py-3 rounded-2xl bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white transition-all shadow-sm shadow-primary-200"
+            >
+              <span className="inline-flex items-center gap-2.5">
+                <ShoppingBag className="w-4 h-4" strokeWidth={2.5} />
+                <span className="text-sm font-bold">Visit storefront</span>
+              </span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" strokeWidth={2.5} />
+            </a>
+
+            {/* Secondary actions */}
             <div className="grid grid-cols-3 gap-2.5 mb-6">
               <ActionBtn icon={Navigation}     label="Directions" onClick={() => setRoute(shopId)} primary />
               {shop.phone    && <ActionBtn icon={Phone}          label="Call"      onClick={() => window.open(`tel:${shop.phone}`)} />}
