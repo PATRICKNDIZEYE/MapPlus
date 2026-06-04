@@ -3,9 +3,11 @@ import {
   ArrowRight, ArrowUpRight,
 } from 'lucide-react';
 import { SiteFooter } from '@/components/marketing/SiteFooter';
-import { MarketingHeader } from '@/components/marketing/MarketingHeader';
 import { PropertyDashboard } from '@/components/marketing/PropertyDashboard';
-import { HeroProductFan } from '@/components/marketing/HeroProductFan';
+import { MallEntryHero } from '@/components/marketing/MallEntryHero';
+import { TrendingShopsRow } from '@/components/marketing/TrendingShopsRow';
+import { MarketingHeader } from '@/components/marketing/MarketingHeader';
+import { YoGuideFloatingTeaser } from '@/components/marketing/YoGuideFloatingTeaser';
 
 const PRINCIPLES = [
   {
@@ -101,82 +103,15 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-white font-jakarta text-ink-900">
 
+      {/* Sticky/morphing nav — sits above the hero, then turns into a
+          centred pill once the user scrolls past the first viewport. */}
       <MarketingHeader />
 
-      {/* ── Hero — sky gradient with floating product cards ── */}
-      <section className="relative overflow-hidden">
+      {/* ── Cinematic mall entry hero ── */}
+      <MallEntryHero />
 
-        {/* Indigo gradient base */}
-        <div aria-hidden className="absolute inset-0"
-          style={{
-            background:
-              'linear-gradient(180deg, #1A0030 0%, #28004A 30%, #4B0082 60%, #8A4FB8 85%, #E5D1F3 100%)',
-          }}
-        />
-
-        {/* Atmospheric mist (low-altitude clouds) — soft elliptical glow at the bottom */}
-        <div aria-hidden className="absolute inset-x-0 bottom-0 h-2/3 pointer-events-none"
-          style={{
-            background:
-              'radial-gradient(ellipse 70% 55% at 50% 100%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.15) 35%, transparent 70%)',
-          }}
-        />
-
-        {/* Sun-rays / haze (very subtle horizontal stripes high up) */}
-        <div aria-hidden className="absolute inset-0 pointer-events-none opacity-30"
-          style={{
-            background:
-              'radial-gradient(ellipse 90% 30% at 50% 0%, rgba(255,255,255,0.18) 0%, transparent 60%)',
-          }}
-        />
-
-        {/* Vignette top corners */}
-        <div aria-hidden className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              'radial-gradient(ellipse 60% 40% at 0% 0%, rgba(0,0,0,0.28) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 100% 0%, rgba(0,0,0,0.28) 0%, transparent 60%)',
-          }}
-        />
-
-        <div className="relative pt-32 pb-12 px-6">
-          <div className="max-w-5xl mx-auto text-center">
-
-            <h1 className="text-white text-[36px] sm:text-[56px] lg:text-[88px] xl:text-[96px] font-extrabold tracking-tighter leading-[0.96]">
-              Mapping the inside
-              <br />
-              of every commercial building.
-            </h1>
-
-            <p className="mt-5 sm:mt-6 text-white/80 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed px-2 sm:px-0">
-              mallGuide digitises floor plans into searchable, navigable, leaseable digital products.
-              <br className="hidden sm:inline" />
-              One mall in production. Three more under contract.
-            </p>
-
-            {/* CTAs — full-width on mobile (one-tap thumb targets), inline on desktop. */}
-            <div className="mt-8 sm:mt-9 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 max-w-xs sm:max-w-none mx-auto">
-              <Link href="/map/chic-kigali"
-                className="inline-flex items-center justify-center gap-2 bg-gradient-to-b from-primary-500 to-primary-700 hover:from-primary-600 hover:to-primary-800 text-white font-semibold text-sm px-5 py-3 rounded-full shadow-[0_8px_24px_-6px_rgba(75,0,130,0.55)] hover:shadow-[0_12px_28px_-6px_rgba(75,0,130,0.65)] hover:-translate-y-0.5 transition-all">
-                Explore the live map <ArrowRight className="w-4 h-4" />
-              </Link>
-              <a href="mailto:hello@yoguide.com?subject=mallGuide%20pilot%20enquiry"
-                className="inline-flex items-center justify-center gap-2 bg-white/15 hover:bg-white/25 backdrop-blur border border-white/30 hover:border-white/50 text-white font-semibold text-sm px-5 py-3 rounded-full transition-colors">
-                Book a call
-              </a>
-            </div>
-
-            {/* Proof line */}
-            <p className="mt-10 inline-block text-[11px] font-mono uppercase tracking-[0.22em] text-white/55">
-              <span className="text-white/75">Pilot live</span> · CHIC Kigali · 890 units · ~300 ms search
-            </p>
-          </div>
-
-          {/* Floating glass card fan */}
-          <div className="relative mt-12 sm:mt-20">
-            <HeroProductFan />
-          </div>
-        </div>
-      </section>
+      {/* ── Trending shops band — live data from CHIC ── */}
+      <TrendingShopsRow />
 
       {/* ── Pilot / spec table ── */}
       <section id="pilot" className="border-b border-ink-100">
@@ -207,7 +142,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Owner console preview ── */}
-      <section className="border-b border-ink-100 bg-ink-900 text-white">
+      <section id="owners" className="border-b border-ink-100 bg-ink-900 text-white scroll-mt-16">
         <div className="max-w-6xl mx-auto px-6 py-20">
           <div className="max-w-2xl mb-10">
             <SectionLabel n="02" label="What owners see" tone="dark" />
@@ -337,6 +272,9 @@ export default function HomePage() {
       </section>
 
       <SiteFooter />
+
+      {/* Floating concierge prompt — bottom-right teaser bubble */}
+      <YoGuideFloatingTeaser />
     </div>
   );
 }

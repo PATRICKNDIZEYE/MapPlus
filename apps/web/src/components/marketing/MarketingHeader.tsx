@@ -13,14 +13,19 @@ const NAV = [
 ];
 
 /**
- * Landing-page header. Sits on top of the indigo hero gradient.
+ * Landing-page header.
  *
- * On mobile (< md) it collapses the nav into a hamburger that opens
- * a full-height overlay. The CTA chip ("Book a call") stays visible
- * at all sizes so visitors always have a one-tap call-to-action.
+ *   At the top of the page  → transparent, full-width, light copy so it
+ *                              sits invisibly over the dark hero photo.
+ *   Past the scroll threshold → morphs into a centred white "pill"
+ *                              with a subtle border + shadow that floats
+ *                              over the page like a sticky toolbar.
+ *
+ * Always position: fixed so the nav is always reachable.
  */
 export function MarketingHeader() {
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   // Lock body scroll while the mobile menu is open.
   useEffect(() => {
@@ -30,37 +35,72 @@ export function MarketingHeader() {
     }
   }, [open]);
 
+  // Track scroll position so we can morph the header into a pill.
+  useEffect(() => {
+    const update = () => setScrolled(window.scrollY > 32);
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    return () => window.removeEventListener('scroll', update);
+  }, []);
+
+  // Light tone (white text) sits over the dark hero. Dark tone (ink text)
+  // is for the pill once the user has scrolled past the hero.
+  const dark = scrolled;
+
   return (
     <>
-      <header className="absolute top-0 inset-x-0 z-40 h-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-full flex items-center justify-between gap-2">
-          <Logo size="sm" tone="light" />
+      <header
+        className={`fixed inset-x-0 top-0 z-40 transition-all duration-300 ease-out
+          ${dark ? 'pt-3 sm:pt-4' : 'pt-0'}`}
+      >
+        <div
+          className={`mx-auto flex items-center justify-between gap-3 transition-all duration-300 ease-out
+            ${dark
+              ? 'max-w-3xl mx-3 sm:mx-auto h-12 sm:h-14 px-3 sm:px-4 rounded-full bg-white/95 backdrop-blur-md border border-ink-200 shadow-[0_8px_28px_-12px_rgba(15,23,42,0.18)]'
+              : 'max-w-7xl px-4 sm:px-6 h-16'}`}
+        >
+          <Logo size="sm" tone={dark ? 'primary' : 'light'} />
 
           {/* Desktop nav */}
-          <nav className="hidden md:flex items-center text-[13px] font-medium">
+          <nav className={`hidden md:flex items-center text-[13px] font-medium transition-all duration-300
+            ${dark ? 'gap-0' : 'gap-0'}`}>
             {NAV.map((item) => (
-              <Link key={item.href} href={item.href}
-                className="px-3 py-1.5 text-white/70 hover:text-white transition-colors">
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`px-3 py-1.5 transition-colors
+                  ${dark ? 'text-ink-600 hover:text-ink-900' : 'text-white/70 hover:text-white'}`}
+              >
                 {item.label}
               </Link>
             ))}
           </nav>
 
-          <div className="flex items-center gap-2">
-            {/* Sign in — hidden on the tiniest screens to keep room for the primary CTA */}
-            <Link href="/login" className="hidden sm:inline-flex text-xs font-semibold text-white/80 hover:text-white px-3 py-1.5">
+          <div className="flex items-center gap-1.5">
+            {/* Sign in — hidden on tiny screens to keep room for the CTA */}
+            <Link
+              href="/login"
+              className={`hidden sm:inline-flex text-xs font-semibold px-3 py-1.5 transition-colors
+                ${dark ? 'text-ink-600 hover:text-ink-900' : 'text-white/80 hover:text-white'}`}
+            >
               Sign in
             </Link>
-            <a href="mailto:hello@yoguide.com?subject=mallGuide%20pilot%20enquiry"
-               className="inline-flex items-center gap-1.5 bg-white text-ink-900 hover:bg-ink-50 transition-colors text-xs font-semibold px-3.5 sm:px-4 py-2 rounded-full shadow-sm whitespace-nowrap">
+            <a
+              href="mailto:hello@yoguide.com?subject=mallGuide%20pilot%20enquiry"
+              className={`inline-flex items-center gap-1.5 transition-colors text-xs font-semibold px-3.5 sm:px-4 py-2 rounded-full whitespace-nowrap
+                ${dark
+                  ? 'bg-primary-600 hover:bg-primary-700 text-white shadow-sm shadow-primary-200'
+                  : 'bg-white text-ink-900 hover:bg-ink-50 shadow-sm'}`}
+            >
               Book a call
             </a>
-            {/* Hamburger — visible on mobile only */}
+            {/* Hamburger — mobile */}
             <button
               type="button"
               onClick={() => setOpen(true)}
-              className="md:hidden inline-flex items-center justify-center w-9 h-9 rounded-full text-white/80 hover:text-white hover:bg-white/10 transition-colors"
               aria-label="Open menu"
+              className={`md:hidden inline-flex items-center justify-center w-9 h-9 rounded-full transition-colors
+                ${dark ? 'text-ink-700 hover:bg-ink-100' : 'text-white/80 hover:text-white hover:bg-white/10'}`}
             >
               <Menu className="w-4 h-4" strokeWidth={2.5} />
             </button>

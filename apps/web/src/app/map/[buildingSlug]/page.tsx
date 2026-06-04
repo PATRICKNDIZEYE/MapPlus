@@ -4,7 +4,7 @@ import { BrandedLoader } from '@/components/ui/BrandedLoader';
 
 interface BuildingPageProps {
   params: { buildingSlug: string };
-  searchParams: { floor?: string; from?: string };
+  searchParams: { floor?: string; from?: string; to?: string };
 }
 
 export default function BuildingPage({ params, searchParams }: BuildingPageProps) {
@@ -21,6 +21,7 @@ export default function BuildingPage({ params, searchParams }: BuildingPageProps
           buildingSlug={params.buildingSlug}
           initialFloorId={searchParams.floor}
           fromAnchorId={searchParams.from}
+          autoRouteToShopId={searchParams.to}
         />
       </Suspense>
     </div>

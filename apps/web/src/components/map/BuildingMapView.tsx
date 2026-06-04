@@ -46,10 +46,12 @@ interface BuildingMapViewProps {
   buildingSlug: string;
   initialFloorId?: string;
   fromAnchorId?: string;
+  /** ?to=<shopId> from the URL — auto-triggers Directions for that shop. */
+  autoRouteToShopId?: string;
 }
 
-export function BuildingMapView({ buildingSlug, initialFloorId }: BuildingMapViewProps) {
-  const { setActiveBuilding, setActiveFloor, clearRoute } = useMapActions();
+export function BuildingMapView({ buildingSlug, initialFloorId, autoRouteToShopId }: BuildingMapViewProps) {
+  const { setActiveBuilding, setActiveFloor, clearRoute, setUserAnchor, selectShop: selectShopAction, setRoute } = useMapActions();
   const activeFloorId = useActiveFloorId();
   const selectedShop  = useSelectedShop();
   const routeVisible  = useRouteVisible();
@@ -104,19 +106,59 @@ export function BuildingMapView({ buildingSlug, initialFloorId }: BuildingMapVie
     if (target) setActiveFloor(target.id, target.floorNumber);
   }, [floors, initialFloorId, setActiveFloor]);
 
+  // Auto-trigger Directions when ?to=<shopId> is set in the URL. Fires
+  // once per shopId so manually closing the route doesn't yank it back.
+  const autoRoutedRef = useRef<string | null>(null);
+  const autoShopQ = trpc.shops.byId.useQuery(
+    { id: autoRouteToShopId ?? '' },
+    { enabled: !!autoRouteToShopId },
+  );
+  useEffect(() => {
+    if (!autoRouteToShopId || !autoShopQ.data || autoRoutedRef.current === autoRouteToShopId) return;
+    autoRoutedRef.current = autoRouteToShopId;
+    const s = autoShopQ.data;
+    selectShopAction({
+      shopId:   s.id,
+      shopName: s.publicName,
+      unitId:   s.unitId ?? '',
+      unitCode: s.unitCode ?? '',
+      category: s.category,
+    });
+    setRoute(s.id);
+  }, [autoRouteToShopId, autoShopQ.data, selectShopAction, setRoute]);
+
   // Derived map data — must live above the early returns so React sees the
   // same hook order on every render.
-  const entrances = useMemo(
-    () => (floorGeoJSON ? deriveEntrances(floorGeoJSON) : []),
-    [floorGeoJSON],
-  );
-
-  // Navigation grid: built once per floor change. Unit polygons are
-  // marked blocked, everything else is corridor.
+  //
+  // Build the nav grid FIRST so deriveEntrances can snap each cardinal
+  // entrance from a wall vertex INWARD onto a real corridor cell.
+  // Without this, the A* start point can sit inside a unit polygon and
+  // the polyline appears to cut through walls.
   const navGrid = useMemo(
     () => (floorGeoJSON ? buildNavGrid(floorGeoJSON) : null),
     [floorGeoJSON],
   );
+
+  const entrances = useMemo(
+    () => (floorGeoJSON ? deriveEntrances(floorGeoJSON, navGrid) : []),
+    [floorGeoJSON, navGrid],
+  );
+
+  // Re-sync a previously saved anchor to its freshly-snapped coordinate.
+  // localStorage might be holding a wall-vertex anchor from before the
+  // snap-inward fix; refreshing it heals the pulse marker + the route
+  // start in one shot.
+  useEffect(() => {
+    if (!userAnchor || !entrances.length) return;
+    const fresh = entrances.find((e) => e.id === userAnchor.id);
+    if (!fresh) return;
+    if (
+      fresh.coordinates[0] !== userAnchor.coordinates[0] ||
+      fresh.coordinates[1] !== userAnchor.coordinates[1]
+    ) {
+      setUserAnchor({ id: fresh.id, label: fresh.label, coordinates: fresh.coordinates });
+    }
+  }, [entrances, userAnchor, setUserAnchor]);
 
   // Multi-floor route logic.
   //

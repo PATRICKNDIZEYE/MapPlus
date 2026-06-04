@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import {
   ArrowLeft, Package, Search, ShoppingBag, Phone, MessageCircle, MapPin, Clock,
+  Navigation,
 } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { trpc } from '@/lib/trpc';
@@ -70,6 +71,18 @@ export default function ShopStorefrontPage() {
         >
           <ArrowLeft className="w-3 h-3" strokeWidth={2.5} /> Back
         </Link>
+
+        {/* Get directions — sends the shopper back to the live map with
+            the route auto-triggered for this shop. */}
+        {s.buildingSlug && (
+          <Link
+            href={`/map/${s.buildingSlug}?to=${s.id}`}
+            className="absolute top-4 right-4 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-gradient-to-r from-primary-500 to-primary-700 hover:from-primary-600 hover:to-primary-800 text-white text-xs font-bold shadow-lg shadow-primary-900/20 transition-all hover:-translate-y-0.5"
+          >
+            <Navigation className="w-3.5 h-3.5" strokeWidth={2.5} />
+            Get directions
+          </Link>
+        )}
 
         {/* Identity row — pinned to the bottom of the hero */}
         <div className="absolute inset-x-0 bottom-0 px-5 pb-6">

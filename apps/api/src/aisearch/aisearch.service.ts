@@ -16,6 +16,31 @@ interface AskResult {
   toolCalls: Array<{ tool: string; input: unknown; result: unknown }>;
 }
 
+/**
+ * Quick keyword→category routing used by the no-Claude-key fallback path
+ * AND as a category boost even when the LLM is on. Means typing
+ * "shoes", "phone", "cake" returns useful shops even before any
+ * product catalogue is seeded.
+ */
+const CATEGORY_KEYWORDS: Record<string, string[]> = {
+  'Fashion & Apparel':  ['shoe', 'dress', 'shirt', 'cloth', 'fashion', 'suit', 'tailor', 'fabric', 'jean', 'wear', 'wedding', 'bag'],
+  'Electronics':        ['phone', 'laptop', 'computer', 'tv', 'television', 'electronic', 'gadget', 'repair', 'tablet', 'speaker', 'headphone', 'camera'],
+  'Food & Beverages':   ['food', 'restaurant', 'coffee', 'juice', 'cake', 'pizza', 'eat', 'meal', 'breakfast', 'lunch', 'dinner', 'snack', 'drink'],
+  'Health & Pharmacy':  ['pharmacy', 'medicine', 'drug', 'health', 'clinic', 'doctor', 'paracetamol'],
+  'Banking & Finance':  ['bank', 'atm', 'money', 'cash', 'finance', 'loan', 'mobile money', 'momo'],
+  'Beauty & Cosmetics': ['beauty', 'cosmetic', 'makeup', 'salon', 'hair', 'nail', 'skincare', 'perfume', 'lotion'],
+  'Sports & Fitness':   ['sport', 'gym', 'fitness', 'exercise', 'football', 'jersey', 'sneaker'],
+  'Entertainment':      ['cinema', 'movie', 'play', 'game', 'entertain', 'arcade'],
+};
+
+function guessCategory(query: string): string | null {
+  const q = query.toLowerCase();
+  for (const [cat, kws] of Object.entries(CATEGORY_KEYWORDS)) {
+    if (kws.some((k) => q.includes(k))) return cat;
+  }
+  return null;
+}
+
 const SYSTEM_PROMPT = [
   "You are yoGuide — an in-mall shopping assistant for mallGuide, helping shoppers in Kigali find products and shops across every partner mall in the network.",
   "",
@@ -94,12 +119,55 @@ export class AiSearchService {
     if (!query.trim()) throw new BadRequestException('Empty query');
 
     if (!this.client) {
-      // Dev fallback when no API key — just delegate to keyword search.
-      const shops = await this.searchShops({ query });
-      const reply = shops.length
-        ? `I found ${shops.length} matching shop${shops.length === 1 ? '' : 's'}. (AI replies are disabled — set ANTHROPIC_API_KEY to enable conversational answers.)`
-        : 'No matches found. Try a different keyword.';
-      return { reply, toolCalls: [{ tool: 'search_shops', input: { query }, result: shops }] };
+      // Dev fallback when no API key.
+      //   - Always run BOTH shop + product search in parallel.
+      //   - Then route the query through a keyword→category guess and
+      //     pull more shops by category if the literal search was empty.
+      //   - Sort products by price ascending so the cheapest concrete
+      //     offers surface first — what the shopper actually needs to
+      //     decide where to go.
+      const calls: AskResult['toolCalls'] = [];
+
+      const [productsRaw, shopsLiteral] = await Promise.all([
+        this.searchProducts({ query }),
+        this.searchShops({ query }),
+      ]);
+
+      // Sort products: priced items first (cheapest → most expensive),
+      // unpriced items after. This is what the front-end reads, so the
+      // tool-call record carries the sorted version.
+      const productsSorted = [...productsRaw].sort((a, b) => {
+        const ap = a.priceAmount; const bp = b.priceAmount;
+        if (ap == null && bp == null) return 0;
+        if (ap == null) return 1;
+        if (bp == null) return -1;
+        return ap - bp;
+      });
+
+      calls.push({ tool: 'search_products', input: { query }, result: productsSorted });
+      calls.push({ tool: 'search_shops',    input: { query }, result: shopsLiteral });
+
+      let shops = shopsLiteral;
+      let categoryUsed: string | null = null;
+      if (!shops.length) {
+        const guessedCat = guessCategory(query);
+        if (guessedCat) {
+          categoryUsed = guessedCat;
+          shops = await this.searchShops({ query: guessedCat, category: guessedCat });
+          calls.push({ tool: 'search_shops', input: { query: guessedCat, category: guessedCat }, result: shops });
+        }
+      }
+
+      const products = productsSorted;
+
+      const reply = products.length
+        ? `${products.length} item${products.length === 1 ? '' : 's'} match "${query}" — cheapest first.`
+        : shops.length
+          ? categoryUsed
+            ? `No exact products, but ${shops.length} ${categoryUsed} shop${shops.length === 1 ? '' : 's'} are likely to have what you want.`
+            : `${shops.length} matching shop${shops.length === 1 ? '' : 's'}.`
+          : `I couldn't find a match for "${query}". Try a brand name, a category, or a more general word.`;
+      return { reply, toolCalls: calls };
     }
 
     const model = await this.platformConfig.getString('anthropic_model', this.fallbackModel);

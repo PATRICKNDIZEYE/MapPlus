@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { eq, and } from 'drizzle-orm';
 import { DatabaseService } from '../database/database.service';
-import { shopProfiles, products, units, floors } from '@mallguide/shared';
+import { shopProfiles, products, units, floors, buildings } from '@mallguide/shared';
 import type { JwtPayload } from '@mallguide/shared';
 
 @Injectable()
@@ -66,10 +66,13 @@ export class ShopsService {
         floorId: units.floorId,
         floorName: floors.name,
         floorNumber: floors.floorNumber,
+        buildingSlug: buildings.slug,
+        buildingName: buildings.name,
       })
       .from(shopProfiles)
       .innerJoin(units, eq(units.id, shopProfiles.unitId))
       .innerJoin(floors, eq(floors.id, units.floorId))
+      .innerJoin(buildings, eq(buildings.id, units.buildingId))
       .where(and(eq(shopProfiles.id, id), eq(shopProfiles.isPublished, true)))
       .limit(1);
 

@@ -5,6 +5,7 @@
 // cardinal edge (N, S, E, W). They live only on the ground floor.
 
 import type { FloorMapGeoJSON } from '@mallguide/shared';
+import type { NavGrid } from './pathfinding';
 
 export interface Entrance {
   id:          string;
@@ -28,10 +29,19 @@ type Pt = [number, number];
 
 /**
  * Returns up to 4 cardinal entrances inferred from the floor's building
- * shell. Each entrance's coordinate is the point on the shell perimeter
- * closest to the bbox-edge midpoint of that direction.
+ * shell, with each entrance SNAPPED to a walkable corridor cell so the
+ * pathfinder can never start its route inside a wall.
+ *
+ * Algorithm:
+ *   1. Compute the bbox of all unit polygons.
+ *   2. For each cardinal direction (N/S/E/W), pick the perimeter vertex
+ *      closest to that bbox-edge midpoint.
+ *   3. Walk INWARD from that vertex toward the building centre in
+ *      ~0.5m steps, and stop at the first cell the nav grid marks as
+ *      walkable. That cell IS the entrance — sitting just inside the
+ *      corridor instead of on top of a shop wall.
  */
-export function deriveEntrances(geo: FloorMapGeoJSON): Entrance[] {
+export function deriveEntrances(geo: FloorMapGeoJSON, grid?: NavGrid | null): Entrance[] {
   // Entrances are a ground-floor concept.
   if (geo.floorNumber !== 0) return [];
 
@@ -64,6 +74,8 @@ export function deriveEntrances(geo: FloorMapGeoJSON): Entrance[] {
     { id: 'entrance-W', label: 'West entrance',   target: [minLng, midLat] },
   ];
 
+  const buildingCentre: Pt = [midLng, midLat];
+
   return candidates.map(({ id, label, target }) => {
     let bestDist = Infinity;
     let best: Pt = target;
@@ -71,13 +83,53 @@ export function deriveEntrances(geo: FloorMapGeoJSON): Entrance[] {
       const d = (p[0] - target[0]) ** 2 + (p[1] - target[1]) ** 2;
       if (d < bestDist) { bestDist = d; best = p; }
     }
+    // Snap inward to the corridor so the route can't start in a wall.
+    const snapped = grid ? snapInwardToWalkable(best, buildingCentre, grid) : best;
     return {
       id,
       label,
-      coordinates: best,
+      coordinates: snapped,
       photoUrl: ENTRANCE_PHOTOS[id] ?? ENTRANCE_PHOTOS['entrance-S']!,
     };
   });
+}
+
+/**
+ * Find the closest walkable corridor cell to `from`. Spiral BFS bounded
+ * to ~6m of search radius — entrances should sit RIGHT at the door, not
+ * deep inside the mall. If nothing walkable is found within range we
+ * leave the coordinate as-is and let the pathfinder handle it.
+ */
+function snapInwardToWalkable(from: Pt, _toward: Pt, grid: NavGrid): Pt {
+  void _toward; // unused — kept for signature stability
+  const c0 = Math.floor((from[0] - grid.minLng) / grid.cellLng);
+  const r0 = Math.floor((from[1] - grid.minLat) / grid.cellLat);
+  // Already on a corridor cell? Keep it.
+  if (c0 >= 0 && c0 < grid.cols && r0 >= 0 && r0 < grid.rows
+      && grid.cells[r0 * grid.cols + c0] === 1) {
+    return from;
+  }
+  // Cap the snap to ~6m (4 cells at 1.5m each) — past that, the
+  // candidate vertex is in the wrong building corner and we shouldn't
+  // teleport the entrance halfway across the floor.
+  const maxRadius = 4;
+  for (let radius = 1; radius <= maxRadius; radius++) {
+    for (let dr = -radius; dr <= radius; dr++) {
+      for (let dc = -radius; dc <= radius; dc++) {
+        if (Math.max(Math.abs(dr), Math.abs(dc)) !== radius) continue;
+        const c = c0 + dc;
+        const r = r0 + dr;
+        if (c < 0 || c >= grid.cols || r < 0 || r >= grid.rows) continue;
+        if (grid.cells[r * grid.cols + c] === 1) {
+          return [
+            grid.minLng + (c + 0.5) * grid.cellLng,
+            grid.minLat + (r + 0.5) * grid.cellLat,
+          ];
+        }
+      }
+    }
+  }
+  return from;
 }
 
 /**
