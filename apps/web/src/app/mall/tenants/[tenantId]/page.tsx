@@ -12,6 +12,7 @@ import {
 import Image from 'next/image';
 import { trpc } from '@/lib/trpc';
 import { Badge } from '@/components/ui/Badge';
+import { BrandedLoader } from '@/components/ui/BrandedLoader';
 
 type Tab = 'overview' | 'payments' | 'traffic' | 'catalog' | 'lease';
 
@@ -66,7 +67,7 @@ export default function TenantDetailPage() {
   if (isLoading) {
     return (
       <div className="p-10 flex items-center justify-center">
-        <Loader2 className="w-5 h-5 text-primary-500 animate-spin" />
+        <BrandedLoader size="lg" label="Loading tenant…" />
       </div>
     );
   }
@@ -351,7 +352,7 @@ function TrafficTab({ tenantId, totals }: { tenantId: string; totals: DetailData
         <div className="px-5 py-5">
           {isLoading || !series ? (
             <div className="h-44 flex items-center justify-center">
-              <Loader2 className="w-4 h-4 text-primary-500 animate-spin" />
+              <BrandedLoader size="md" label="Loading chart…" />
             </div>
           ) : (
             <div className="flex items-end gap-1 h-44">

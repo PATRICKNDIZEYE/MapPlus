@@ -3,10 +3,11 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowLeft, Package, ShoppingBag, Loader2 } from 'lucide-react';
+import { ArrowLeft, Package, ShoppingBag } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { getShopperSessionId } from '@/lib/shopperSession';
 import { Badge } from '@/components/ui/Badge';
+import { BrandedLoader } from '@/components/ui/BrandedLoader';
 import { AskYoGuideTrigger } from '@/components/aisearch/AskYoGuideTrigger';
 
 const STATUS_META: Record<string, { label: string; variant: 'green' | 'amber' | 'red' | 'gray' | 'blue' }> = {
@@ -44,7 +45,7 @@ export default function MyOrdersPage() {
         <p className="text-sm text-ink-500 mb-6">Buy &amp; Try orders from your current device.</p>
 
         {!sessionId || orders.isLoading ? (
-          <div className="text-center text-sm text-ink-500 py-10"><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Loading…</div>
+          <div className="py-10 flex justify-center"><BrandedLoader size="md" label="Loading…" /></div>
         ) : !orders.data?.length ? (
           <div className="card p-10 text-center">
             <ShoppingBag className="w-7 h-7 mx-auto text-ink-300 mb-3" strokeWidth={1.5} />

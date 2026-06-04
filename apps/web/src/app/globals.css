@@ -83,3 +83,60 @@ h1, h2, h3, h4, h5, h6 {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
+
+/* ── BrandedLoader keyframes (apps/web/src/components/ui/BrandedLoader.tsx) ── */
+@keyframes mg-ripple {
+  0%   { transform: scale(0.55); opacity: 0.65; }
+  80%  { transform: scale(1.25); opacity: 0;   }
+  100% { transform: scale(1.25); opacity: 0;   }
+}
+@keyframes mg-heartbeat {
+  0%, 100% { transform: scale(1);    }
+  50%      { transform: scale(1.04); }
+}
+@keyframes mg-dot {
+  0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
+  40%           { opacity: 1;    transform: translateY(-2px); }
+}
+
+.mg-loader-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.mg-loader-ring {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  border-radius: 9999px;
+  transform-origin: center;
+  will-change: transform, opacity;
+  animation: mg-ripple 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+.mg-loader-ring-2 { animation-delay: 1.2s; }
+.mg-loader-mark {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  transform-origin: center;
+  will-change: transform;
+  animation: mg-heartbeat 1.6s ease-in-out infinite;
+}
+.mg-loader-dot {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 9999px;
+  animation: mg-dot 1.2s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+.mg-loader-dot-2 { animation-delay: 0.2s; }
+.mg-loader-dot-3 { animation-delay: 0.4s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mg-loader-ring,
+  .mg-loader-mark,
+  .mg-loader-dot { animation: none !important; }
+  .mg-loader-ring { opacity: 0; }
+}

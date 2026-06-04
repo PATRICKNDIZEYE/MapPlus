@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { trpc } from '@/lib/trpc';
+import { BrandedLoader } from '@/components/ui/BrandedLoader';
 import { AskYoGuideTrigger } from '@/components/aisearch/AskYoGuideTrigger';
 
 export default function ShopStorefrontPage() {
@@ -29,7 +30,7 @@ export default function ShopStorefrontPage() {
   }, [productsQ.data, query]);
 
   if (shop.isLoading) {
-    return <div className="min-h-screen flex items-center justify-center text-sm text-ink-500">Loading…</div>;
+    return <div className="min-h-screen flex items-center justify-center"><BrandedLoader size="lg" label="Loading shop…" /></div>;
   }
   if (shop.error) {
     return (
@@ -145,7 +146,7 @@ export default function ShopStorefrontPage() {
         </div>
 
         {productsQ.isLoading ? (
-          <div className="text-center text-sm text-ink-500 py-12">Loading products…</div>
+          <div className="py-12 flex justify-center"><BrandedLoader size="md" label="Loading products…" /></div>
         ) : filtered.length === 0 ? (
           <div className="card p-12 text-center">
             <Package className="w-7 h-7 mx-auto text-ink-300 mb-3" strokeWidth={1.5} />

@@ -9,6 +9,7 @@ import {
 import imageCompression from 'browser-image-compression';
 import { trpc } from '@/lib/trpc';
 import { Badge } from '@/components/ui/Badge';
+import { BrandedLoader } from '@/components/ui/BrandedLoader';
 
 type Product = {
   id: string;
@@ -53,8 +54,8 @@ export default function TenantProductsPage() {
       </header>
 
       {list.isLoading ? (
-        <div className="card p-12 text-center text-sm text-ink-500">
-          <Loader2 className="w-4 h-4 animate-spin inline mr-2" />Loading…
+        <div className="card p-12 flex justify-center">
+          <BrandedLoader size="md" label="Loading products…" />
         </div>
       ) : byShop.size === 0 ? (
         <div className="card p-12 text-center">

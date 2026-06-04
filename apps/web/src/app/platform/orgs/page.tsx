@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { Badge } from '@/components/ui/Badge';
+import { BrandedLoader } from '@/components/ui/BrandedLoader';
 
 const STATUS_BADGE: Record<string, { label: string; variant: 'green' | 'amber' | 'red' | 'gray' | 'blue' }> = {
   active:     { label: 'Active',     variant: 'green' },
@@ -40,7 +41,7 @@ export default function PlatformOrgsPage() {
             </button>
           </div>
           {orgs.isLoading ? (
-            <div className="min-h-[220px] flex flex-col items-center justify-center text-sm text-ink-500"><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Loading…</div>
+            <div className="min-h-[220px] flex flex-col items-center justify-center"><BrandedLoader size="md" label="Loading…" /></div>
           ) : !orgs.data?.length ? (
             <div className="min-h-[220px] flex flex-col items-center justify-center text-sm text-ink-500">
               <Building2 className="w-6 h-6 mx-auto text-ink-300 mb-2" strokeWidth={1.5} />
@@ -76,7 +77,7 @@ export default function PlatformOrgsPage() {
             </button>
           </div>
           {buildings.isLoading ? (
-            <div className="min-h-[220px] flex flex-col items-center justify-center text-sm text-ink-500"><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Loading…</div>
+            <div className="min-h-[220px] flex flex-col items-center justify-center"><BrandedLoader size="md" label="Loading…" /></div>
           ) : !buildings.data?.length ? (
             <div className="min-h-[220px] flex flex-col items-center justify-center text-sm text-ink-500">
               <Building2 className="w-6 h-6 mx-auto text-ink-300 mb-2" strokeWidth={1.5} />

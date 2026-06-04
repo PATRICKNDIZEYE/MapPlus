@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { Badge } from '@/components/ui/Badge';
+import { BrandedLoader } from '@/components/ui/BrandedLoader';
 
 type Platform = 'instagram' | 'facebook' | 'tiktok' | 'twitter';
 type Tone     = 'friendly' | 'professional' | 'playful' | 'urgent';
@@ -236,7 +237,7 @@ export default function TenantMarketingPage() {
             </button>
           </div>
           {posts.isLoading ? (
-            <div className="min-h-[220px] flex flex-col items-center justify-center text-sm text-ink-500"><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Loading…</div>
+            <div className="min-h-[220px] flex flex-col items-center justify-center"><BrandedLoader size="md" label="Loading posts…" /></div>
           ) : !posts.data?.length ? (
             <div className="min-h-[220px] flex flex-col items-center justify-center text-sm text-ink-500">
               <Send className="w-6 h-6 mx-auto text-ink-300 mb-2" strokeWidth={1.5} />

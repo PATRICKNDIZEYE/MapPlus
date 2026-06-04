@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { ShieldAlert } from 'lucide-react';
 import { PlatformSidebar } from '@/components/platform/PlatformSidebar';
+import { BrandedLoader } from '@/components/ui/BrandedLoader';
 import { useAuthStore } from '@/store/auth.store';
 
 /**
@@ -30,7 +31,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
   if (!hydrated || !accessToken) {
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-slate-50">
-        <div className="w-7 h-7 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+        <BrandedLoader size="lg" label="Loading console…" />
       </div>
     );
   }

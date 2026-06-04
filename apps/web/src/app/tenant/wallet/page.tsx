@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { Badge } from '@/components/ui/Badge';
+import { BrandedLoader } from '@/components/ui/BrandedLoader';
 
 const TX_TYPE_LABEL: Record<string, string> = {
   deposit:           'Deposit',
@@ -48,7 +49,7 @@ export default function TenantWalletPage() {
   }
 
   if (balance.isLoading) {
-    return <div className="px-8 py-7 min-h-[60vh] flex items-center justify-center text-sm text-ink-500"><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Loading…</div>;
+    return <div className="px-8 py-7 min-h-[60vh] flex items-center justify-center"><BrandedLoader size="lg" label="Loading wallet…" /></div>;
   }
 
   const d        = balance.data;
@@ -175,7 +176,7 @@ export default function TenantWalletPage() {
               </button>
             </div>
             {transactions.isLoading ? (
-              <div className="min-h-[220px] flex flex-col items-center justify-center text-sm text-ink-500"><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Loading…</div>
+              <div className="min-h-[220px] flex flex-col items-center justify-center"><BrandedLoader size="md" label="Loading transactions…" /></div>
             ) : !transactions.data?.length ? (
               <div className="min-h-[220px] flex flex-col items-center justify-center text-sm text-ink-500">
                 <PiggyBank className="w-6 h-6 mx-auto text-ink-300 mb-2" strokeWidth={1.5} />

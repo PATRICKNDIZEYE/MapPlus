@@ -16,6 +16,7 @@ import {
   ArrowLeft, Menu, QrCode, Building2, ChevronUp, X,
   Laptop2, Shirt, Utensils, Pill, Banknote, Sparkles, Dumbbell, Clapperboard, Store,
 } from 'lucide-react';
+import { BrandedLoader } from '@/components/ui/BrandedLoader';
 
 const CATEGORY_ICON_MAP: Record<string, React.ElementType> = {
   'Electronics': Laptop2, 'Fashion & Apparel': Shirt,   'Food & Beverages':   Utensils,
@@ -25,7 +26,11 @@ const CATEGORY_ICON_MAP: Record<string, React.ElementType> = {
 
 const MapCanvas = dynamic(() => import('./MapCanvas').then((m) => m.MapCanvas), {
   ssr: false,
-  loading: () => <div className="h-full w-full bg-gray-100 animate-pulse" />,
+  loading: () => (
+    <div className="h-full w-full bg-slate-50 flex items-center justify-center">
+      <BrandedLoader size="lg" label="Loading map…" />
+    </div>
+  ),
 });
 
 
@@ -73,10 +78,7 @@ export function BuildingMapView({ buildingSlug, initialFloorId }: BuildingMapVie
 
   if (loadingBuilding) return (
     <div className="h-full flex items-center justify-center bg-slate-50">
-      <div className="flex flex-col items-center gap-3">
-        <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
-        <p className="text-sm text-gray-500">Loading building...</p>
-      </div>
+      <BrandedLoader size="lg" label="Loading building…" />
     </div>
   );
 
@@ -226,7 +228,7 @@ export function BuildingMapView({ buildingSlug, initialFloorId }: BuildingMapVie
           ) : (
             <div className="h-full w-full bg-slate-50 flex items-center justify-center">
               {loadingMap
-                ? <div className="w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+                ? <BrandedLoader size="md" label="Loading floor…" />
                 : <p className="text-sm text-gray-400">Select a floor to view the map</p>
               }
             </div>

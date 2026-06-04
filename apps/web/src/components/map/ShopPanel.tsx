@@ -3,12 +3,13 @@
 import Image from 'next/image';
 import {
   X, Navigation, Phone, MessageCircle, Globe,
-  CheckCircle2, AlertTriangle, Loader2, ShoppingBag, ArrowRight,
+  CheckCircle2, AlertTriangle, ShoppingBag, ArrowRight,
   Laptop2, Shirt, Utensils, Pill, Banknote,
   Sparkles, Dumbbell, Clapperboard, Store,
 } from 'lucide-react';
 import { useMapActions } from '@/store/map.store';
 import { trpc } from '@/lib/trpc';
+import { BrandedLoader } from '@/components/ui/BrandedLoader';
 
 const CATEGORY_ICON: Record<string, React.ElementType> = {
   'Electronics':        Laptop2,
@@ -67,8 +68,7 @@ export function ShopPanel({ shopId }: { shopId: string }) {
 
         {isLoading ? (
           <div className="flex flex-col items-center py-12">
-            <Loader2 className="w-8 h-8 text-primary-400 animate-spin mb-3" strokeWidth={2} />
-            <p className="text-sm text-ink-400">Loading shop…</p>
+            <BrandedLoader size="md" label="Loading shop…" />
           </div>
         ) : shop ? (
           <div className="px-5 pb-8 pt-4">

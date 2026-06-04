@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { TrendingUp, Loader2, Search, AlertCircle } from 'lucide-react';
+import { TrendingUp, Search, AlertCircle } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
+import { BrandedLoader } from '@/components/ui/BrandedLoader';
 
 const WINDOW_OPTIONS = [
   { label: '7 days',  value: 7  },
@@ -59,7 +60,7 @@ export default function MallDemandPage() {
         </div>
 
         {clusters.isLoading ? (
-          <div className="min-h-[220px] flex flex-col items-center justify-center text-sm text-ink-500"><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Clustering queries with embeddings…</div>
+          <div className="min-h-[220px] flex flex-col items-center justify-center"><BrandedLoader size="md" label="Clustering queries with embeddings…" /></div>
         ) : clusters.error ? (
           <div className="px-5 py-12 text-center text-sm text-danger-700">
             <AlertCircle className="w-5 h-5 mx-auto mb-2" />

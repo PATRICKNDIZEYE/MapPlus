@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Receipt, Loader2, Send, CheckCircle2 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { Badge } from '@/components/ui/Badge';
+import { BrandedLoader } from '@/components/ui/BrandedLoader';
 
 const STATUS_BADGE: Record<string, { label: string; variant: 'green' | 'amber' | 'red' | 'gray' | 'blue' }> = {
   draft:     { label: 'Draft',     variant: 'gray'  },
@@ -41,7 +42,7 @@ export default function AdminUtilitiesPage() {
           <h2 className="text-sm font-semibold text-ink-900">All bills</h2>
         </div>
         {list.isLoading ? (
-          <div className="min-h-[220px] flex flex-col items-center justify-center text-sm text-ink-500"><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Loading…</div>
+          <div className="min-h-[220px] flex flex-col items-center justify-center"><BrandedLoader size="md" label="Loading utilities…" /></div>
         ) : !list.data?.length ? (
           <div className="min-h-[220px] flex flex-col items-center justify-center text-sm text-ink-500">
             <Receipt className="w-6 h-6 mx-auto mb-2 text-ink-300" strokeWidth={1.5} />

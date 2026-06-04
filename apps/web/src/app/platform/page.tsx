@@ -3,15 +3,16 @@
 import Link from 'next/link';
 import {
   Building2, Users, Package, TrendingUp, Wallet, ShoppingBag,
-  Loader2, ArrowRight,
+  ArrowRight,
 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
+import { BrandedLoader } from '@/components/ui/BrandedLoader';
 
 export default function PlatformOverviewPage() {
   const overview = trpc.platform.overview.useQuery();
 
   if (overview.isLoading) {
-    return <div className="px-8 py-7 min-h-[60vh] flex items-center justify-center text-sm text-ink-500"><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Loading…</div>;
+    return <div className="px-8 py-7 min-h-[60vh] flex items-center justify-center"><BrandedLoader size="lg" label="Loading overview…" /></div>;
   }
   if (overview.error || !overview.data) {
     return <div className="px-8 py-7 text-sm text-danger-700">{overview.error?.message ?? 'Failed to load.'}</div>;

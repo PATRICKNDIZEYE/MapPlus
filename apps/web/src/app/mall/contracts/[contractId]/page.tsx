@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { Badge } from '@/components/ui/Badge';
+import { BrandedLoader } from '@/components/ui/BrandedLoader';
 
 const STATUS_BADGE: Record<string, { variant: 'green' | 'amber' | 'gray' | 'red' | 'blue'; label: string }> = {
   draft:          { variant: 'gray',  label: 'Draft'             },
@@ -68,7 +69,7 @@ export default function ContractDetailPage() {
   if (isLoading) {
     return (
       <div className="p-10 flex items-center justify-center">
-        <Loader2 className="w-5 h-5 text-primary-500 animate-spin" />
+        <BrandedLoader size="lg" label="Loading contract…" />
       </div>
     );
   }

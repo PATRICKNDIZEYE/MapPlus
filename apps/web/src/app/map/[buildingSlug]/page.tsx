@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { BuildingMapView } from '@/components/map/BuildingMapView';
+import { BrandedLoader } from '@/components/ui/BrandedLoader';
 
 interface BuildingPageProps {
   params: { buildingSlug: string };
@@ -11,11 +12,8 @@ export default function BuildingPage({ params, searchParams }: BuildingPageProps
     <div className="h-full relative">
       <Suspense
         fallback={
-          <div className="h-full flex items-center justify-center bg-gray-100">
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
-              <p className="text-sm text-ink-400">Loading map...</p>
-            </div>
+          <div className="h-full flex items-center justify-center bg-slate-50">
+            <BrandedLoader size="lg" label="Loading map…" />
           </div>
         }
       >

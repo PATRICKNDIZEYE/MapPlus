@@ -1,7 +1,8 @@
 'use client';
 
-import { BarChart3, Loader2, Building2 } from 'lucide-react';
+import { BarChart3, Building2 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
+import { BrandedLoader } from '@/components/ui/BrandedLoader';
 
 export default function PlatformSettlementPage() {
   const data = trpc.platform.settlement.useQuery();
@@ -36,7 +37,7 @@ export default function PlatformSettlementPage() {
           <h2 className="text-sm font-semibold text-ink-900">Per-mall breakdown</h2>
         </div>
         {data.isLoading ? (
-          <div className="min-h-[220px] flex flex-col items-center justify-center text-sm text-ink-500"><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Loading…</div>
+          <div className="min-h-[220px] flex flex-col items-center justify-center"><BrandedLoader size="md" label="Loading settlements…" /></div>
         ) : !data.data?.length ? (
           <div className="min-h-[220px] flex flex-col items-center justify-center text-sm text-ink-500">
             <Building2 className="w-6 h-6 mx-auto text-ink-300 mb-2" strokeWidth={1.5} />

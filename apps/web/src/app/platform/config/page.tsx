@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Settings, Loader2, Save, KeyRound, Eye, EyeOff } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
+import { BrandedLoader } from '@/components/ui/BrandedLoader';
 
 export default function PlatformConfigPage() {
   const list = trpc.platform.listConfig.useQuery();
@@ -20,7 +21,7 @@ export default function PlatformConfigPage() {
 
       <div className="card overflow-hidden">
         {list.isLoading ? (
-          <div className="min-h-[220px] flex flex-col items-center justify-center text-sm text-ink-500"><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Loading…</div>
+          <div className="min-h-[220px] flex flex-col items-center justify-center"><BrandedLoader size="md" label="Loading config…" /></div>
         ) : !list.data?.length ? (
           <div className="min-h-[220px] flex flex-col items-center justify-center text-sm text-ink-500">
             <Settings className="w-6 h-6 mx-auto text-ink-300 mb-2" strokeWidth={1.5} />

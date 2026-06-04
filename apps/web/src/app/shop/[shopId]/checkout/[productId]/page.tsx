@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { getShopperSessionId } from '@/lib/shopperSession';
+import { BrandedLoader } from '@/components/ui/BrandedLoader';
 
 const DELIVERY_FEE = 1500;
 
@@ -52,7 +53,7 @@ export default function CheckoutPage() {
   }
 
   if (productQ.isLoading) {
-    return <div className="min-h-screen flex items-center justify-center text-sm text-ink-500">Loading…</div>;
+    return <div className="min-h-screen flex items-center justify-center"><BrandedLoader size="lg" label="Loading checkout…" /></div>;
   }
   if (productQ.error || !productQ.data) {
     return (

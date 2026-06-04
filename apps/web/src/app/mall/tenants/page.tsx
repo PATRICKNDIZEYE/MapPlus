@@ -4,10 +4,11 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  Search, Plus, Loader2, ArrowRight, Briefcase,
+  Search, Plus, ArrowRight, Briefcase,
 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { Badge } from '@/components/ui/Badge';
+import { BrandedLoader } from '@/components/ui/BrandedLoader';
 
 const BUILDING_SLUG = 'chic-kigali';
 
@@ -137,9 +138,8 @@ export default function TenantsPage() {
         {/* Table */}
         <div className="card overflow-hidden flex-1 min-w-0">
           {isLoading ? (
-            <div className="px-6 py-16 text-center">
-              <Loader2 className="w-5 h-5 text-primary-500 animate-spin mx-auto" />
-              <p className="text-xs text-ink-400 mt-3">Loading tenants…</p>
+            <div className="px-6 py-16 flex justify-center">
+              <BrandedLoader size="md" label="Loading tenants…" />
             </div>
           ) : filtered.length === 0 ? (
             <EmptyState />

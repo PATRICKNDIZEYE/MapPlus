@@ -3,10 +3,11 @@
 import { useMemo, useEffect, useState } from 'react';
 import {
   X, Navigation, MapPin, ArrowUp, ArrowRight, ArrowLeft, DoorOpen,
-  ChevronRight, Footprints, Accessibility, Loader2, Sparkles,
+  ChevronRight, Footprints, Accessibility, Sparkles,
 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { useMapActions } from '@/store/map.store';
+import { BrandedLoader } from '@/components/ui/BrandedLoader';
 
 interface Props {
   shopId: string;
@@ -131,7 +132,7 @@ export function DirectionsPanel({ shopId }: Props) {
       <div className="flex-1 overflow-y-auto px-5 pb-2">
         {isLoading ? (
           <div className="flex items-center justify-center py-10">
-            <Loader2 className="w-5 h-5 text-primary-500 animate-spin" />
+            <BrandedLoader size="md" label="Plotting your route…" />
           </div>
         ) : (
           <ol className="space-y-3">

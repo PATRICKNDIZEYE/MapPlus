@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { Badge } from '@/components/ui/Badge';
+import { BrandedLoader } from '@/components/ui/BrandedLoader';
 
 const STATUS_BADGE: Record<string, { label: string; variant: 'green' | 'amber' | 'red' | 'gray' | 'blue' }> = {
   requested: { label: 'Awaiting review', variant: 'amber' },
@@ -40,7 +41,7 @@ export default function TenantAdvancePage() {
   }
 
   if (eligibility.isLoading) {
-    return <div className="px-8 py-7 min-h-[60vh] flex items-center justify-center text-sm text-ink-500"><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Loading…</div>;
+    return <div className="px-8 py-7 min-h-[60vh] flex items-center justify-center"><BrandedLoader size="lg" label="Loading…" /></div>;
   }
 
   const e = eligibility.data;
@@ -115,7 +116,7 @@ export default function TenantAdvancePage() {
           <h2 className="text-sm font-semibold text-ink-900">Advance history</h2>
         </div>
         {myAdvances.isLoading ? (
-          <div className="min-h-[220px] flex flex-col items-center justify-center text-sm text-ink-500"><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Loading…</div>
+          <div className="min-h-[220px] flex flex-col items-center justify-center"><BrandedLoader size="md" label="Loading advances…" /></div>
         ) : !myAdvances.data?.length ? (
           <div className="min-h-[220px] flex flex-col items-center justify-center text-sm text-ink-500">No advances yet.</div>
         ) : (

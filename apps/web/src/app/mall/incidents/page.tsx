@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { Badge } from '@/components/ui/Badge';
+import { BrandedLoader } from '@/components/ui/BrandedLoader';
 
 const TYPE_ICON: Record<string, typeof AlertTriangle> = {
   security:    Shield,
@@ -53,7 +54,7 @@ export default function AdminIncidentsPage() {
 
       <div className="card overflow-hidden">
         {list.isLoading ? (
-          <div className="min-h-[220px] flex flex-col items-center justify-center text-sm text-ink-500"><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Loading…</div>
+          <div className="min-h-[220px] flex flex-col items-center justify-center"><BrandedLoader size="md" label="Loading…" /></div>
         ) : !list.data?.length ? (
           <div className="min-h-[220px] flex flex-col items-center justify-center text-sm text-ink-500">
             <Shield className="w-6 h-6 mx-auto mb-2 text-ink-300" strokeWidth={1.5} />

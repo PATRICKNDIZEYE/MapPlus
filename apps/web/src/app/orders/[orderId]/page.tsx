@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { Badge } from '@/components/ui/Badge';
+import { BrandedLoader } from '@/components/ui/BrandedLoader';
 
 const STATUS_META: Record<string, { label: string; variant: 'green' | 'amber' | 'red' | 'gray' | 'blue' }> = {
   requested:   { label: 'Requested',    variant: 'amber' },
@@ -40,7 +41,7 @@ export default function OrderDetailPage() {
   });
 
   if (orderQ.isLoading) {
-    return <div className="min-h-screen flex items-center justify-center text-sm text-ink-500"><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Loading…</div>;
+    return <div className="min-h-screen flex items-center justify-center"><BrandedLoader size="lg" label="Loading order…" /></div>;
   }
   if (orderQ.error || !orderQ.data) {
     return <div className="min-h-screen flex items-center justify-center text-sm text-ink-500">Order not found.</div>;

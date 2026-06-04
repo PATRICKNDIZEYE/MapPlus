@@ -8,6 +8,7 @@ import {
   Building2, User, Calendar, FileText, Banknote, ShieldCheck,
 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
+import { BrandedLoader } from '@/components/ui/BrandedLoader';
 
 const BUILDING_SLUG = 'chic-kigali';
 
@@ -290,7 +291,7 @@ export default function AssignWizardPage() {
 
                   <div className="mt-3 border border-ink-100 rounded-lg overflow-hidden">
                     {loadingUnits ? (
-                      <div className="py-10 text-center"><Loader2 className="w-4 h-4 text-primary-500 animate-spin mx-auto" /></div>
+                      <div className="py-10 flex justify-center"><BrandedLoader size="md" label="Loading vacant units…" /></div>
                     ) : matches.length === 0 ? (
                       <div className="py-10 text-center text-xs text-ink-400">
                         {(vacant?.length ?? 0) === 0 ? 'No vacant units on this floor.' : `No matches for "${unitQuery}".`}

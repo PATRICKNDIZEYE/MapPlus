@@ -12,6 +12,7 @@ import type { LucideIcon } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import type { UnitFeatureProperties } from '@mallguide/shared';
 import { Badge } from '@/components/ui/Badge';
+import { BrandedLoader } from '@/components/ui/BrandedLoader';
 import { FloorPlanViewer, FloorPlanLegend, type ViewMode as FloorPlanViewMode } from '@/components/mall/FloorPlanViewer';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -264,10 +265,7 @@ export default function FloorMapsPage() {
         <div className="flex-1 min-w-0 flex flex-col gap-3">
           {isLoading ? (
             <div className="flex-1 bg-slate-100 rounded-xl border border-ink-200 flex items-center justify-center">
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-7 h-7 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
-                <p className="text-xs text-ink-400">Loading floor plan…</p>
-              </div>
+              <BrandedLoader size="lg" label="Loading floor plan…" />
             </div>
           ) : floorGeoJSON ? (
             <FloorPlanViewer
