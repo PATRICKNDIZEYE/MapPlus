@@ -172,13 +172,28 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  pointer-events: none;
   user-select: none;
   filter: drop-shadow(0 4px 10px rgba(15, 23, 42, 0.22));
+  /* Default (non-clickable) — clicks pass through to the map below. */
+  pointer-events: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-family: inherit;
 }
+.mg-escalator--clickable {
+  /* Make the whole pin a real tap target so clicks don't pass through
+     to the polygon underneath. */
+  pointer-events: auto;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+.mg-escalator--clickable:hover  { transform: scale(1.06); }
+.mg-escalator--clickable:active { transform: scale(0.96); }
+
 .mg-escalator-pin {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: linear-gradient(135deg, #4B0082, #28004A);
   color: #ffffff;
@@ -189,8 +204,8 @@
 }
 .mg-escalator-label {
   margin-top: 4px;
-  padding: 3px 9px;
-  font-size: 10px;
+  padding: 3px 10px;
+  font-size: 11px;
   font-weight: 700;
   line-height: 1.3;
   color: #1f2937;
@@ -200,6 +215,27 @@
   white-space: nowrap;
 }
 .mg-escalator-label strong { color: #4B0082; }
+.mg-escalator-hint {
+  margin-top: 3px;
+  padding: 2px 7px;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #ffffff;
+  background: #4B0082;
+  border-radius: 999px;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(-2px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.mg-escalator--clickable:hover .mg-escalator-hint,
+.mg-escalator--clickable:focus-visible .mg-escalator-hint {
+  opacity: 1;
+  transform: translateY(0);
+}
 
 /* ── Turn chevrons — sit at each polyline corner ────────────────────── */
 .mg-route-chevron {

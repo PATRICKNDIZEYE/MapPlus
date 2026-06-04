@@ -188,7 +188,10 @@ export function BuildingMapView({ buildingSlug, initialFloorId }: BuildingMapVie
   // change floors" — and is the same lng/lat on every floor so it
   // anchors leg-A and leg-B in space.
   const escalatorMarker = useMemo<{
-    coordinates: [number, number]; direction: 'up' | 'down'; targetLabel: string;
+    coordinates: [number, number];
+    direction:   'up' | 'down';
+    targetLabel: string;
+    onClick?:    () => void;
   } | null>(() => {
     if (!routeVisible || !destShop || !floorGeoJSON || !floors) return null;
     const active = floors.find((f) => f.id === activeFloorId);
@@ -197,14 +200,26 @@ export function BuildingMapView({ buildingSlug, initialFloorId }: BuildingMapVie
     if (destFloorNum === 0) return null; // single-floor route — no escalator needed
     const vp = centralVerticalPoint(floorGeoJSON);
     if (!vp) return null;
-    if (active.floorNumber === 0) {
-      return { coordinates: vp, direction: 'up', targetLabel: destShop.floorName ?? `Level ${destFloorNum}` };
+    const originFloor = floors.find((f) => f.floorNumber === 0);
+    const destFloor   = floors.find((f) => f.id === destShop.floorId);
+    if (active.floorNumber === 0 && destFloor) {
+      return {
+        coordinates: vp,
+        direction:   'up',
+        targetLabel: destShop.floorName ?? `Level ${destFloorNum}`,
+        onClick:     () => setActiveFloor(destFloor.id, destFloor.floorNumber),
+      };
     }
-    if (active.id === destShop.floorId) {
-      return { coordinates: vp, direction: 'down', targetLabel: 'Ground' };
+    if (active.id === destShop.floorId && originFloor) {
+      return {
+        coordinates: vp,
+        direction:   'down',
+        targetLabel: 'Ground',
+        onClick:     () => setActiveFloor(originFloor.id, originFloor.floorNumber),
+      };
     }
     return null;
-  }, [routeVisible, destShop, floorGeoJSON, floors, activeFloorId]);
+  }, [routeVisible, destShop, floorGeoJSON, floors, activeFloorId, setActiveFloor]);
 
   // Auto-switch the map to the destination floor the moment Directions
   // are triggered for a cross-floor shop. Tracked with a ref so manual
@@ -223,6 +238,27 @@ export function BuildingMapView({ buildingSlug, initialFloorId }: BuildingMapVie
     } else {
       autoSwitchedRef.current = true;
     }
+  }, [routeVisible, destShop, floors, activeFloorId, setActiveFloor]);
+
+  // Bundle the multi-floor leg context for DirectionsPanel — only set
+  // when the route actually spans two floors AND the user is currently
+  // viewing one of the relevant floors.
+  const multiFloorCtx = useMemo(() => {
+    if (!routeVisible || !destShop || !floors) return undefined;
+    if ((destShop.floorNumber ?? 0) === 0) return undefined; // same as origin
+    const originFloor = floors.find((f) => f.floorNumber === 0);
+    const destFloor   = floors.find((f) => f.id === destShop.floorId);
+    if (!originFloor || !destFloor) return undefined;
+    const onOrigin = activeFloorId === originFloor.id;
+    const onDest   = activeFloorId === destFloor.id;
+    if (!onOrigin && !onDest) return undefined;
+    return {
+      activeLeg:             (onOrigin ? 'origin' : 'destination') as 'origin' | 'destination',
+      originFloorLabel:      originFloor.shortName ?? originFloor.name ?? 'Ground',
+      destFloorLabel:        destFloor.shortName   ?? destFloor.name   ?? `L${destFloor.floorNumber}`,
+      onSwitchToOrigin:      () => setActiveFloor(originFloor.id, originFloor.floorNumber),
+      onSwitchToDestination: () => setActiveFloor(destFloor.id,   destFloor.floorNumber),
+    };
   }, [routeVisible, destShop, floors, activeFloorId, setActiveFloor]);
 
   if (loadingBuilding) return (
@@ -469,7 +505,11 @@ export function BuildingMapView({ buildingSlug, initialFloorId }: BuildingMapVie
         {/* Directions panel takes priority when "Guide Me There" was tapped;
             otherwise fall back to the shop info panel. */}
         {routeVisible && selectedShop ? (
-          <DirectionsPanel shopId={selectedShop.shopId} routeCoordinates={routeCoordinates} />
+          <DirectionsPanel
+            shopId={selectedShop.shopId}
+            routeCoordinates={routeCoordinates}
+            multiFloor={multiFloorCtx}
+          />
         ) : selectedShop ? (
           <ShopPanel shopId={selectedShop.shopId} />
         ) : null}

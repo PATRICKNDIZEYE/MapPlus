@@ -9,19 +9,32 @@ import { trpc } from '@/lib/trpc';
 import { useMapActions, useUserAnchor } from '@/store/map.store';
 import { BrandedLoader } from '@/components/ui/BrandedLoader';
 
+type Leg = 'origin' | 'transition' | 'destination';
+
+export interface MultiFloorContext {
+  activeLeg:             'origin' | 'destination';
+  originFloorLabel:      string;
+  destFloorLabel:        string;
+  onSwitchToOrigin:      () => void;
+  onSwitchToDestination: () => void;
+}
+
 interface Props {
   shopId: string;
   /** Polyline used to draw the route on the map. We re-use it to compute real distance. */
   routeCoordinates?: [number, number][];
+  /** When set, the route spans two floors and we render a leg switcher. */
+  multiFloor?: MultiFloorContext;
 }
 
 type StepIcon = 'door' | 'straight' | 'right' | 'left' | 'up' | 'arrive';
 
 interface Step {
-  icon: StepIcon;
-  text: string;
-  /** Walking distance for this step in metres. */
+  icon:      StepIcon;
+  text:      string;
   distanceM: number;
+  /** Which leg of the journey this step belongs to. */
+  leg:       Leg;
 }
 
 const ICON_BY_KEY: Record<StepIcon, React.ElementType> = {
@@ -35,22 +48,22 @@ const ICON_BY_KEY: Record<StepIcon, React.ElementType> = {
 
 /**
  * Compact bottom drawer that activates when "Directions" is tapped from
- * a shop. Shows the user's *actual* entrance as the starting point,
- * real walking distance computed from the route polyline, and a peek
- * of the next step. Tap the chevron to expand the full step list.
+ * a shop. Real-anchored to the user's chosen entrance, real walking
+ * distance from the polyline, leg-aware when the destination is on a
+ * different floor.
  */
-export function DirectionsPanel({ shopId, routeCoordinates }: Props) {
+export function DirectionsPanel({ shopId, routeCoordinates, multiFloor }: Props) {
   const { clearRoute } = useMapActions();
   const userAnchor = useUserAnchor();
   const { data: shop, isLoading } = trpc.shops.byId.useQuery({ id: shopId });
 
-  const [activeStep, setActiveStep] = useState(0);
-  const [expanded, setExpanded]     = useState(false);
+  const [expanded, setExpanded]           = useState(false);
   const [accessibleMode, setAccessibleMode] = useState(false);
 
-  // Real walking distance from the polyline we drew on the map.
-  // Falls back to a sensible estimate when no route yet (loading).
-  const totalDistance = useMemo(() => {
+  // Real walking distance from the polyline drawn on the map. This is
+  // *just the current leg's* distance — for cross-floor routes we
+  // augment with an estimate below.
+  const currentLegMetres = useMemo(() => {
     if (!routeCoordinates?.length) return 0;
     let m = 0;
     for (let i = 1; i < routeCoordinates.length; i++) {
@@ -61,26 +74,65 @@ export function DirectionsPanel({ shopId, routeCoordinates }: Props) {
 
   const steps = useMemo<Step[]>(() => {
     if (!shop) return [];
-    return simulateSteps(shop, accessibleMode, userAnchor?.label, totalDistance);
-  }, [shop, accessibleMode, userAnchor?.label, totalDistance]);
+    return simulateSteps(shop, accessibleMode, userAnchor?.label, currentLegMetres, !!multiFloor);
+  }, [shop, accessibleMode, userAnchor?.label, currentLegMetres, multiFloor]);
+
+  // Total journey distance estimate. When multi-floor, we only know one
+  // leg precisely (the visible one); estimate the other half via the
+  // narrative weights below.
+  const totalDistance = useMemo(() => {
+    if (!multiFloor) return currentLegMetres;
+    const weightTotal = steps.reduce((s, x) => s + x.distanceM, 0);
+    return weightTotal;
+  }, [multiFloor, steps, currentLegMetres]);
 
   const etaMinutes = Math.max(1, Math.ceil(totalDistance / 1.2 / 60));
 
-  // Auto-advance to feel like live navigation; pauses when expanded so
-  // the user can read at their own pace.
+  // First step of the leg currently being viewed on the map. We snap
+  // the highlighted step to it when the user flips legs.
+  const activeLegSteps = useMemo(() => {
+    if (!multiFloor) return steps;
+    return steps.filter((s) =>
+      multiFloor.activeLeg === 'origin'
+        ? s.leg === 'origin' || s.leg === 'transition'
+        : s.leg === 'transition' || s.leg === 'destination',
+    );
+  }, [steps, multiFloor]);
+
+  const [activeStep, setActiveStep] = useState(0);
+  // Reset the highlighted step whenever the visible leg changes.
+  useEffect(() => {
+    const firstIdx = multiFloor
+      ? steps.findIndex((s) =>
+          multiFloor.activeLeg === 'origin'
+            ? s.leg === 'origin'
+            : s.leg === 'destination')
+      : 0;
+    setActiveStep(firstIdx >= 0 ? firstIdx : 0);
+  }, [multiFloor?.activeLeg, steps, multiFloor]);
+
+  // Auto-advance within the currently visible leg.
   useEffect(() => {
     if (!steps.length || expanded) return;
     const t = setInterval(() => {
-      setActiveStep((i) => (i + 1 >= steps.length ? i : i + 1));
+      setActiveStep((i) => {
+        const next = i + 1;
+        if (next >= steps.length) return i;
+        // Don't auto-cross legs — stop at the last step of the active leg.
+        if (multiFloor && steps[next]?.leg && stepBelongsTo(steps[next]!.leg, multiFloor.activeLeg) === false) {
+          return i;
+        }
+        return next;
+      });
     }, 3500);
     return () => clearInterval(t);
-  }, [steps.length, expanded]);
+  }, [steps, expanded, multiFloor]);
 
   const current = steps[activeStep];
   const next    = steps[activeStep + 1];
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 z-30 md:left-auto md:right-3 md:bottom-3 md:max-w-[380px]">
+    <div className="absolute bottom-0 left-0 right-0 z-30 md:left-auto md:right-3 md:bottom-3 md:max-w-[400px]">
       <div className="relative bg-white shadow-2xl rounded-2xl rounded-b-none md:rounded-b-2xl overflow-hidden">
         {isLoading ? (
           <div className="px-4 py-5 flex items-center justify-center">
@@ -88,7 +140,7 @@ export function DirectionsPanel({ shopId, routeCoordinates }: Props) {
           </div>
         ) : !shop ? null : (
           <>
-            {/* Header — shop name + ETA + close, all in one row */}
+            {/* Header — shop name + ETA + close */}
             <div className="px-4 pt-3 pb-2.5 flex items-center gap-3 border-b border-ink-50">
               <div className="w-9 h-9 rounded-xl bg-primary-600 flex items-center justify-center flex-shrink-0">
                 <Navigation className="w-4 h-4 text-white" strokeWidth={2.5} />
@@ -101,7 +153,7 @@ export function DirectionsPanel({ shopId, routeCoordinates }: Props) {
                 <p className="text-base font-extrabold text-primary-700 tabular-nums leading-none">
                   {etaMinutes} <span className="text-[10px] font-bold opacity-70">min</span>
                 </p>
-                <p className="text-[10px] text-ink-500 tabular-nums">{totalDistance} m</p>
+                <p className="text-[10px] text-ink-500 tabular-nums">~{totalDistance} m</p>
               </div>
               <button
                 onClick={() => setAccessibleMode((v) => !v)}
@@ -121,7 +173,7 @@ export function DirectionsPanel({ shopId, routeCoordinates }: Props) {
               </button>
             </div>
 
-            {/* Origin chip — explicitly anchors the route to the user's entrance */}
+            {/* Origin chip */}
             {userAnchor && (
               <div className="px-4 py-2 bg-primary-50/40 border-b border-primary-100 flex items-center gap-2">
                 <DoorOpen className="w-3 h-3 text-primary-600 flex-shrink-0" strokeWidth={2.5} />
@@ -131,7 +183,30 @@ export function DirectionsPanel({ shopId, routeCoordinates }: Props) {
               </div>
             )}
 
-            {/* Current step — big, single focus */}
+            {/* Leg switcher — only on cross-floor routes */}
+            {multiFloor && (
+              <div className="px-3 py-2 bg-ink-50/60 border-b border-ink-100 flex items-stretch gap-1.5">
+                <LegPill
+                  active={multiFloor.activeLeg === 'origin'}
+                  badge="1"
+                  primary={multiFloor.originFloorLabel}
+                  secondary="Walk to escalator"
+                  onClick={multiFloor.onSwitchToOrigin}
+                />
+                <div className="self-center flex flex-col items-center text-ink-300">
+                  <ArrowUp className="w-3 h-3" strokeWidth={2.5} />
+                </div>
+                <LegPill
+                  active={multiFloor.activeLeg === 'destination'}
+                  badge="2"
+                  primary={multiFloor.destFloorLabel}
+                  secondary="Walk to shop"
+                  onClick={multiFloor.onSwitchToDestination}
+                />
+              </div>
+            )}
+
+            {/* Current step — big focus */}
             {current && (
               <div className="px-4 pt-3 pb-2 flex items-start gap-3">
                 <div className="w-10 h-10 rounded-xl bg-primary-600 text-white flex items-center justify-center flex-shrink-0">
@@ -139,23 +214,22 @@ export function DirectionsPanel({ shopId, routeCoordinates }: Props) {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-ink-900 leading-snug">{current.text}</p>
-                  <p className="text-[11px] text-ink-500 mt-0.5 inline-flex items-center gap-1">
+                  <p className="text-[11px] text-ink-500 mt-0.5 inline-flex items-center gap-1.5">
                     <Footprints className="w-3 h-3" strokeWidth={2.5} />
                     {current.distanceM} m
-                    {steps.length > 1 && (
-                      <span className="ml-1.5 text-ink-400">· step {activeStep + 1} of {steps.length}</span>
-                    )}
+                    <span className="text-ink-400">·</span>
+                    <span className="text-ink-400">step {activeLegSteps.indexOf(current) + 1} of {activeLegSteps.length}</span>
                   </p>
                 </div>
               </div>
             )}
 
-            {/* Next step preview when collapsed */}
+            {/* Next step preview */}
             {!expanded && next && (
               <button
                 type="button"
                 onClick={() => setExpanded(true)}
-                className="w-full mx-0 px-4 pb-3 flex items-center gap-2.5 text-left hover:bg-ink-50/60 transition-colors"
+                className="w-full px-4 pb-3 flex items-center gap-2.5 text-left hover:bg-ink-50/60 transition-colors"
               >
                 <div className="w-7 h-7 rounded-lg bg-ink-100 text-ink-500 flex items-center justify-center flex-shrink-0">
                   {(() => { const Icon = ICON_BY_KEY[next.icon]; return <Icon className="w-3.5 h-3.5" strokeWidth={2.25} />; })()}
@@ -168,7 +242,7 @@ export function DirectionsPanel({ shopId, routeCoordinates }: Props) {
               </button>
             )}
 
-            {/* Full step list when expanded */}
+            {/* Expanded step list */}
             {expanded && (
               <div className="px-4 pb-3 border-t border-ink-50">
                 <button
@@ -180,9 +254,10 @@ export function DirectionsPanel({ shopId, routeCoordinates }: Props) {
                 </button>
                 <ol className="space-y-1.5 max-h-[40vh] overflow-y-auto">
                   {steps.map((step, i) => {
-                    const Icon = ICON_BY_KEY[step.icon];
+                    const Icon     = ICON_BY_KEY[step.icon];
                     const isActive = i === activeStep;
                     const isPast   = i <  activeStep;
+                    const onActiveLeg = !multiFloor || stepBelongsTo(step.leg, multiFloor.activeLeg);
                     return (
                       <li
                         key={i}
@@ -190,7 +265,8 @@ export function DirectionsPanel({ shopId, routeCoordinates }: Props) {
                         className={`flex items-start gap-2.5 px-2 py-2 rounded-xl border cursor-pointer transition-all
                           ${isActive ? 'bg-primary-50 border-primary-200'
                             : isPast ? 'bg-ink-50 border-ink-100 opacity-60'
-                                     : 'bg-white border-ink-100 hover:border-ink-200'}`}
+                                     : 'bg-white border-ink-100 hover:border-ink-200'}
+                          ${!onActiveLeg ? 'opacity-50' : ''}`}
                       >
                         <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${
                           isActive ? 'bg-primary-600 text-white' : 'bg-ink-100 text-ink-500'
@@ -201,7 +277,20 @@ export function DirectionsPanel({ shopId, routeCoordinates }: Props) {
                           <p className={`text-[12px] leading-snug ${isActive ? 'font-semibold text-ink-900' : 'text-ink-700'}`}>
                             {step.text}
                           </p>
-                          <p className="text-[10px] text-ink-400 mt-0.5 tabular-nums">{step.distanceM} m</p>
+                          <p className="text-[10px] text-ink-400 mt-0.5 tabular-nums inline-flex items-center gap-1.5">
+                            {step.distanceM} m
+                            {multiFloor && (
+                              <span className={`px-1.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${
+                                step.leg === 'origin'      ? 'bg-amber-100 text-amber-700' :
+                                step.leg === 'transition'  ? 'bg-primary-100 text-primary-700' :
+                                                             'bg-success-100 text-success-700'
+                              }`}>
+                                {step.leg === 'origin' ? multiFloor.originFloorLabel
+                                  : step.leg === 'transition' ? 'transit'
+                                  : multiFloor.destFloorLabel}
+                              </span>
+                            )}
+                          </p>
                         </div>
                         {isActive && <ChevronRight className="w-3.5 h-3.5 text-primary-500 mt-1 flex-shrink-0 animate-pulse" strokeWidth={2.5} />}
                       </li>
@@ -211,7 +300,7 @@ export function DirectionsPanel({ shopId, routeCoordinates }: Props) {
               </div>
             )}
 
-            {/* Footer — single "I've arrived" CTA */}
+            {/* Footer */}
             <div className="px-4 py-2.5 border-t border-ink-100 flex items-center gap-2">
               <button
                 onClick={() => clearRoute()}
@@ -228,10 +317,47 @@ export function DirectionsPanel({ shopId, routeCoordinates }: Props) {
   );
 }
 
-/**
- * Planar approximation of metres between two lng/lat points. Fine at
- * building scale where curvature is irrelevant.
- */
+// ── helpers ─────────────────────────────────────────────────────────────
+
+function LegPill({
+  active, badge, primary, secondary, onClick,
+}: {
+  active: boolean;
+  badge: string;
+  primary: string;
+  secondary: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex-1 flex items-center gap-2 px-2.5 py-1.5 rounded-xl border transition-all text-left
+        ${active
+          ? 'bg-primary-600 border-primary-700 text-white shadow-sm'
+          : 'bg-white border-ink-200 text-ink-700 hover:border-primary-300'}`}
+    >
+      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-extrabold flex-shrink-0
+        ${active ? 'bg-white/20 text-white' : 'bg-primary-100 text-primary-700'}`}>
+        {badge}
+      </span>
+      <span className="min-w-0">
+        <span className={`block text-[11px] font-bold leading-tight truncate ${active ? 'text-white' : 'text-ink-900'}`}>
+          {primary}
+        </span>
+        <span className={`block text-[9px] truncate ${active ? 'text-white/80' : 'text-ink-500'}`}>
+          {secondary}
+        </span>
+      </span>
+    </button>
+  );
+}
+
+function stepBelongsTo(stepLeg: Leg, activeLeg: 'origin' | 'destination'): boolean {
+  if (stepLeg === 'transition') return true; // belongs to both
+  return stepLeg === activeLeg;
+}
+
 function planarMetres(a: [number, number], b: [number, number]): number {
   const midLat = (a[1] + b[1]) / 2;
   const mPerDegLng = 111_320 * Math.cos((midLat * Math.PI) / 180);
@@ -242,15 +368,21 @@ function planarMetres(a: [number, number], b: [number, number]): number {
 }
 
 /**
- * Generate plausible walking steps. Step 1 now uses the user's actual
- * entrance label. Total distances are scaled to match the real route
- * length so the per-step numbers add up.
+ * Build a leg-tagged narrative. When the route is single-floor, all
+ * steps are tagged `origin`. When cross-floor, steps 1–2 are origin,
+ * the escalator step is `transition`, and steps after it are
+ * `destination`.
+ *
+ * Distances are scaled by leg: the visible leg gets the precise
+ * `currentLegM`; the invisible leg is estimated proportionally to its
+ * narrative weight so the total still adds up reasonably.
  */
 function simulateSteps(
-  shop: { publicName: string; floorName?: string | null; floorNumber?: number | null; unitCode?: string | null; category?: string | null },
-  accessible: boolean,
-  entranceLabel: string | undefined,
-  routeDistanceM: number,
+  shop:           { publicName: string; floorName?: string | null; floorNumber?: number | null; unitCode?: string | null },
+  accessible:     boolean,
+  entranceLabel:  string | undefined,
+  currentLegM:    number,
+  isCrossFloor:   boolean,
 ): Step[] {
   const floorNum  = shop.floorNumber ?? 0;
   const unitCode  = shop.unitCode ?? '';
@@ -258,49 +390,64 @@ function simulateSteps(
   const sideTurn: 'right' | 'left' =
     ['A', 'B', 'C'].includes(unitLetter) ? 'left' : 'right';
 
-  // Build the *narrative* steps first; distribute the real route
-  // distance over them proportionally below.
-  const narrative: Step[] = [];
+  const narrative: Array<Omit<Step, 'distanceM'> & { weight: number }> = [];
 
-  narrative.push({
-    icon: 'door',
-    text: `Start at ${entranceLabel ?? 'the main entrance'} and head straight inside.`,
-    distanceM: 1,
-  });
-  narrative.push({
-    icon: 'straight',
-    text: 'Walk through the central atrium past the fountain.',
-    distanceM: 3,
-  });
+  // Origin leg
+  narrative.push({ icon: 'door',     leg: 'origin', weight: 1, text: `Start at ${entranceLabel ?? 'the main entrance'} and head inside.` });
+  narrative.push({ icon: 'straight', leg: 'origin', weight: 3, text: 'Walk through the central atrium past the fountain.' });
+
+  // Transition
   if (floorNum > 0) {
     narrative.push({
       icon: 'up',
+      leg:  'transition',
+      weight: 1,
       text: accessible
         ? `Take the elevator (north side) up to ${shop.floorName ?? `Level ${floorNum}`}.`
         : `Ride the central escalator up to ${shop.floorName ?? `Level ${floorNum}`}.`,
-      distanceM: 1,
     });
   }
-  narrative.push({
-    icon: sideTurn,
-    text: `Turn ${sideTurn} into Corridor ${unitLetter}.`,
-    distanceM: 1,
-  });
-  narrative.push({
-    icon: 'straight',
-    text: `Walk down Corridor ${unitLetter} — ${shop.publicName} will be on your ${sideTurn}.`,
-    distanceM: 3,
-  });
-  narrative.push({
-    icon: 'arrive',
-    text: `Arrive at ${shop.publicName}${unitCode ? ` (Unit ${unitCode})` : ''}.`,
-    distanceM: 1,
-  });
 
-  // Scale narrative weights so the per-step metres sum to the real
-  // route distance (or a sensible fallback when the route isn't ready).
-  const fallback = 80 + (floorNum * 12);
-  const target = routeDistanceM > 0 ? routeDistanceM : fallback;
-  const weightSum = narrative.reduce((s, x) => s + x.distanceM, 0);
-  return narrative.map((x) => ({ ...x, distanceM: Math.round((x.distanceM / weightSum) * target) }));
+  // Destination leg
+  narrative.push({ icon: sideTurn,  leg: 'destination', weight: 1, text: `Turn ${sideTurn} into Corridor ${unitLetter}.` });
+  narrative.push({ icon: 'straight', leg: 'destination', weight: 3, text: `Walk down Corridor ${unitLetter} — ${shop.publicName} is on your ${sideTurn}.` });
+  narrative.push({ icon: 'arrive',   leg: 'destination', weight: 1, text: `Arrive at ${shop.publicName}${unitCode ? ` (Unit ${unitCode})` : ''}.` });
+
+  // Distance distribution. Single-floor: spread currentLegM across all
+  // steps proportionally. Cross-floor: spread currentLegM across only
+  // the steps in the visible leg; estimate the other leg from
+  // narrative weights with a baseline of ~12m per weight unit.
+  if (!isCrossFloor) {
+    const totalWeight = narrative.reduce((s, x) => s + x.weight, 0);
+    const target = currentLegM > 0 ? currentLegM : 90;
+    return narrative.map((x) => ({
+      icon: x.icon, text: x.text, leg: x.leg,
+      distanceM: Math.round((x.weight / totalWeight) * target),
+    }));
+  }
+
+  // Cross-floor scaling
+  const originSteps      = narrative.filter((x) => x.leg === 'origin');
+  const destSteps        = narrative.filter((x) => x.leg === 'destination');
+  const originWeight     = originSteps.reduce((s, x) => s + x.weight, 0);
+  const destWeight       = destSteps.reduce((s, x) => s + x.weight, 0);
+
+  // Pick which leg the current routeCoordinates represents — we don't
+  // know directly here, so we infer from currentLegM > 0. We bias
+  // toward the origin leg as the "first" if currentLegM is small,
+  // destination if larger; otherwise just split.
+  const estimateOther    = currentLegM > 0 ? currentLegM : 50; // fall back
+
+  const originTarget = currentLegM > 0 ? currentLegM : estimateOther;
+  const destTarget   = estimateOther;
+
+  return narrative.map((x) => {
+    if (x.leg === 'origin') {
+      return { icon: x.icon, text: x.text, leg: x.leg, distanceM: Math.round((x.weight / originWeight) * originTarget) };
+    }
+    if (x.leg === 'destination') {
+      return { icon: x.icon, text: x.text, leg: x.leg, distanceM: Math.round((x.weight / destWeight) * destTarget) };
+    }
+    return { icon: x.icon, text: x.text, leg: x.leg, distanceM: 0 };
+  });
 }

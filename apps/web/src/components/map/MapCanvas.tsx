@@ -17,6 +17,8 @@ interface EscalatorMarker {
   coordinates: [number, number];
   direction:   'up' | 'down';
   targetLabel: string; // e.g. "Level 2" or "Ground"
+  /** Tap handler — switches the map to the other leg's floor. */
+  onClick?:    () => void;
 }
 
 interface MapCanvasProps {
@@ -307,7 +309,7 @@ export function MapCanvas({
       // Make sure the route + its dashed overlay sit ABOVE the unit
       // extrusions, which can otherwise occlude the line in pitched 3D.
       if (routeCoordinates?.length) {
-        for (const id of ['route-casing', 'route-line', 'route-dash']) {
+        for (const id of ['route-casing', 'route-line']) {
           if (map.getLayer(id)) map.moveLayer(id);
         }
       }
@@ -478,10 +480,15 @@ export function MapCanvas({
       }
       if (!escalatorMarker) return;
       const doc = (globalThis as unknown as { document: Document }).document;
-      const el  = doc.createElement('div');
-      el.className = 'mg-escalator';
       const arrow = escalatorMarker.direction === 'up' ? '↑' : '↓';
       const verb  = escalatorMarker.direction === 'up' ? 'Take to' : 'From';
+      const clickable = !!escalatorMarker.onClick;
+      // Wrap in a button so the whole pin is a tap target (and so the
+      // browser handles focus/keyboard activation for free). Otherwise
+      // the click was passing through to the polygon underneath.
+      const el = doc.createElement(clickable ? 'button' : 'div') as HTMLElement;
+      el.className = `mg-escalator${clickable ? ' mg-escalator--clickable' : ''}`;
+      if (clickable) (el as HTMLButtonElement).type = 'button';
       el.innerHTML = `
         <span class="mg-escalator-pin">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -490,7 +497,14 @@ export function MapCanvas({
           </svg>
         </span>
         <span class="mg-escalator-label">${arrow} ${escapeHtml(verb)} <strong>${escapeHtml(escalatorMarker.targetLabel)}</strong></span>
+        ${clickable ? `<span class="mg-escalator-hint">Tap to switch floor</span>` : ''}
       `;
+      if (clickable) {
+        el.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          escalatorMarker.onClick!();
+        });
+      }
       escalatorMarkerRef.current = new maplibregl.Marker({ element: el, anchor: 'bottom' })
         .setLngLat(escalatorMarker.coordinates)
         .addTo(map);
@@ -991,33 +1005,4 @@ function addRoute(map: maplibregl.Map, coords: [number, number][]) {
   map.addLayer({ id: 'route-line', type: 'line', source: 'route',
     layout: { 'line-join': 'round', 'line-cap': 'round' },
     paint: { 'line-color': SELECTED_STROKE, 'line-width': 4.5 } });
-  // Animated dashed overlay — gives the line a "walking direction" feel.
-  map.addLayer({ id: 'route-dash', type: 'line', source: 'route',
-    layout: { 'line-join': 'round', 'line-cap': 'round' },
-    paint: {
-      'line-color': '#C9A4E5',
-      'line-width': 2.5,
-      'line-dasharray': [0, 2.4],
-    } });
-  animateRouteDash(map);
-}
-
-let routeDashFrame: number | null = null;
-function animateRouteDash(map: maplibregl.Map) {
-  // Cycle line-dasharray to make the brand-coloured dashes appear to
-  // travel along the route — pure visual flourish, no GPS involved.
-  if (routeDashFrame !== null) cancelAnimationFrame(routeDashFrame);
-  const sequence: Array<[number, number]> = [
-    [0, 2.4], [0.4, 2.0], [0.8, 1.6], [1.2, 1.2], [1.6, 0.8], [2.0, 0.4],
-  ];
-  let i = 0;
-  const tick = () => {
-    if (!map.getLayer('route-dash')) { routeDashFrame = null; return; }
-    map.setPaintProperty('route-dash', 'line-dasharray', sequence[i % sequence.length]);
-    i++;
-    routeDashFrame = (globalThis as unknown as { requestAnimationFrame: typeof requestAnimationFrame }).requestAnimationFrame(() => {
-      setTimeout(tick, 95);
-    });
-  };
-  tick();
 }
