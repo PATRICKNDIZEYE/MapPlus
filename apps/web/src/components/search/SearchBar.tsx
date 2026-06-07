@@ -24,7 +24,7 @@ interface SearchBarProps {
 }
 
 export function SearchBar({ buildingId }: SearchBarProps) {
-  const { setSearch, openSearch, closeSearch, selectShop } = useMapActions();
+  const { setSearch, openSearch, closeSearch, selectShop, setSearchHighlights, clearSearchHighlights } = useMapActions();
   const searchQuery = useMapStore((s) => s.searchQuery);
   const searchOpen  = useMapStore((s) => s.searchOpen);
   const inputRef    = useRef<HTMLInputElement>(null);
@@ -48,6 +48,20 @@ export function SearchBar({ buildingId }: SearchBarProps) {
     { buildingId, q: debouncedQuery },
     { enabled: debouncedQuery.length >= 2 },
   );
+
+  // Whenever results land, paint matching shops on the floor plan with
+  // category-coloured icons. Cleared on input clear or close.
+  useEffect(() => {
+    if (debouncedQuery.length < 2) {
+      clearSearchHighlights();
+      return;
+    }
+    if (!results) return;
+    setSearchHighlights(
+      results.map((r) => ({ shopId: r.shopId, category: r.category })),
+      debouncedQuery,
+    );
+  }, [results, debouncedQuery, setSearchHighlights, clearSearchHighlights]);
 
   return (
     <div ref={containerRef} className="relative flex-1 max-w-lg">

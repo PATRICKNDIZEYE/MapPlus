@@ -17,10 +17,30 @@ function landingForRole(role: string): string {
   return '/mall';
 }
 
+const PORTAL_META: Record<string, { label: string; description: string; color: string }> = {
+  tenant: {
+    label:       'Tenant Portal',
+    description: 'Sign in to manage your shop, products, and reports.',
+    color:       '#4B0082',
+  },
+  mall: {
+    label:       'Mall Management',
+    description: 'Sign in to manage your building, units, and tenants.',
+    color:       '#1E40AF',
+  },
+  admin: {
+    label:       'Platform Admin',
+    description: 'Sign in to the yoGuide platform administration.',
+    color:       '#065F46',
+  },
+};
+
 function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
   const explicitRedirect = params.get('redirect');
+  const portalType = params.get('type') ?? '';
+  const portal = PORTAL_META[portalType] ?? null;
 
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
@@ -78,9 +98,23 @@ function LoginForm() {
           </div>
         </Link>
 
+        {portal && (
+          <div
+            className="mb-6 px-4 py-3 rounded-xl text-white text-sm font-semibold flex items-center gap-2"
+            style={{ background: portal.color }}
+          >
+            <span className="w-2 h-2 rounded-full bg-white/60" />
+            {portal.label}
+          </div>
+        )}
+
         <div className="bg-white border border-ink-200 rounded-2xl p-8 shadow-xs">
-          <h1 className="text-xl font-bold tracking-tight text-ink-900">Sign in</h1>
-          <p className="text-sm text-ink-500 mt-1">Sign in to the mallGuide platform.</p>
+          <h1 className="text-xl font-bold tracking-tight text-ink-900">
+            {portal ? portal.label : 'Sign in'}
+          </h1>
+          <p className="text-sm text-ink-500 mt-1">
+            {portal ? portal.description : 'Sign in to the mallGuide platform.'}
+          </p>
 
           <div className="mt-6">
             <GoogleSignInButton

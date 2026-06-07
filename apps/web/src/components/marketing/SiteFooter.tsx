@@ -2,9 +2,7 @@ import Link from 'next/link';
 import { Logo } from '@/components/brand/Logo';
 
 const PRODUCT = [
-  { label: 'Live map',       href: '/map/chic-kigali' },
-  { label: 'Tenant portal',  href: '/tenant' },
-  { label: 'Sign in',        href: '/login' },
+  { label: 'CHIC Kigali map', href: '/map/chic-kigali' },
 ];
 
 const COMPANY = [
@@ -30,7 +28,7 @@ export function SiteFooter() {
               <Logo size="sm" />
             </div>
             <p className="text-sm text-ink-500 leading-relaxed max-w-sm">
-              Indoor building intelligence for commercial real estate.
+              Indoor navigation for malls and commercial buildings.
               Built by yoGuide in Kigali, Rwanda.
             </p>
             <p className="text-xs text-ink-400 mt-4">

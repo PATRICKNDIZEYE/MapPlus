@@ -31,6 +31,8 @@ const nextConfig = {
       // Google Places Photos
       { protocol: 'https', hostname: 'maps.googleapis.com' },
       { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
+      // Flickr (building cover photos)
+      { protocol: 'https', hostname: 'live.staticflickr.com' },
     ],
   },
 };

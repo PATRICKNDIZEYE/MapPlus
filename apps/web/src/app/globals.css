@@ -175,35 +175,47 @@
   .mg-pointer-arrow path { animation: none; stroke-dashoffset: 0; }
 }
 
-/* ── Walking dot — animates along the active route ──────────────────── */
-.mg-route-dot {
-  position: relative;
-  width: 22px;
-  height: 22px;
+/* ── Search highlight pins — category-coloured badges on matching shops ─ */
+.mg-search-pin {
   pointer-events: none;
-  filter: drop-shadow(0 2px 6px rgba(75, 0, 130, 0.45));
+  filter: drop-shadow(0 3px 8px rgba(15, 23, 42, 0.28));
+  animation: mg-search-pin-drop 0.34s cubic-bezier(0.18, 0.89, 0.32, 1.28) both;
 }
-.mg-route-dot-core {
-  position: absolute;
-  inset: 5px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #7C3AED, #4B0082);
+.mg-search-pin-core {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--mg-pin-bg, #475569);
+  color: var(--mg-pin-fg, #ffffff);
   border: 2px solid #ffffff;
 }
-.mg-route-dot-ring {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: rgba(75, 0, 130, 0.28);
-  transform: scale(0.55);
-  opacity: 0;
-  animation: mg-route-dot-pulse 1.6s ease-out infinite;
+@keyframes mg-search-pin-drop {
+  0%   { opacity: 0; transform: translateY(-10px) scale(0.6); }
+  100% { opacity: 1; transform: translateY(0)     scale(1);   }
 }
-.mg-route-dot-ring--delayed { animation-delay: 0.8s; }
-@keyframes mg-route-dot-pulse {
-  0%   { transform: scale(0.55); opacity: 0.6; }
-  80%  { transform: scale(1.7);  opacity: 0;   }
-  100% { transform: scale(1.7);  opacity: 0;   }
+@media (prefers-reduced-motion: reduce) {
+  .mg-search-pin { animation: none; }
+}
+
+
+/* ── Category icon badges — one per occupied unit, replaces text labels ─ */
+.mg-unit-icon {
+  pointer-events: none;
+  filter: drop-shadow(0 2px 5px rgba(15, 23, 42, 0.20));
+}
+.mg-unit-icon-core {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--mg-pin-bg, #475569);
+  color: var(--mg-pin-fg, #ffffff);
+  border: 2px solid #ffffff;
 }
 
 /* ── Escalator marker — only shown on a cross-floor route ───────────── */
@@ -276,19 +288,7 @@
   transform: translateY(0);
 }
 
-/* ── Turn chevrons — sit at each polyline corner ────────────────────── */
-.mg-route-chevron {
-  width: 22px;
-  height: 22px;
-  color: #4B0082;
-  pointer-events: none;
-  /* white halo so the indigo arrow reads on the indigo route line */
-  filter: drop-shadow(0 0 1.5px #ffffff) drop-shadow(0 0 1.5px #ffffff);
-}
-.mg-route-chevron svg { display: block; }
-
 @media (prefers-reduced-motion: reduce) {
-  .mg-route-dot-ring { animation: none; opacity: 0; }
 }
 .maplibregl-ctrl-group {
   @apply !shadow-sm !rounded-lg overflow-hidden border border-ink-200;

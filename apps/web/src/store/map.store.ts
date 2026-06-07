@@ -31,6 +31,11 @@ interface MapStore {
   // Selected shop from map click or search
   selectedShop: SelectedShop | null;
 
+  // Shop IDs the active search wants painted on the floor plan. Each
+  // entry carries its category so MapCanvas can colour the icon.
+  searchHighlights: Array<{ shopId: string; category: string | null }>;
+  searchHighlightLabel: string | null;
+
   // Route state
   routeDestinationShopId: string | null;
   routeVisible: boolean;
@@ -49,6 +54,11 @@ interface MapStore {
     setSearch: (query: string) => void;
     openSearch: () => void;
     closeSearch: () => void;
+    setSearchHighlights: (
+      highlights: Array<{ shopId: string; category: string | null }>,
+      label: string | null,
+    ) => void;
+    clearSearchHighlights: () => void;
   };
 }
 
@@ -80,6 +90,8 @@ export const useMapStore = create<MapStore>((set) => ({
   activeFloorNumber: null,
   userAnchor: loadAnchor(),
   selectedShop: null,
+  searchHighlights: [],
+  searchHighlightLabel: null,
   routeDestinationShopId: null,
   routeVisible: false,
   searchQuery: '',
@@ -122,6 +134,12 @@ export const useMapStore = create<MapStore>((set) => ({
     openSearch: () => set({ searchOpen: true }),
 
     closeSearch: () => set({ searchOpen: false, searchQuery: '' }),
+
+    setSearchHighlights: (highlights, label) =>
+      set({ searchHighlights: highlights, searchHighlightLabel: label }),
+
+    clearSearchHighlights: () =>
+      set({ searchHighlights: [], searchHighlightLabel: null }),
   },
 }));
 
@@ -131,4 +149,6 @@ export const useSelectedShop = () => useMapStore((s) => s.selectedShop);
 export const useRouteVisible = () => useMapStore((s) => s.routeVisible);
 export const useUserAnchor   = () => useMapStore((s) => s.userAnchor);
 export const useRouteDestinationShopId = () => useMapStore((s) => s.routeDestinationShopId);
+export const useSearchHighlights       = () => useMapStore((s) => s.searchHighlights);
+export const useSearchHighlightLabel   = () => useMapStore((s) => s.searchHighlightLabel);
 export const useMapActions = () => useMapStore((s) => s.actions);

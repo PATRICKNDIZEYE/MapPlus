@@ -9,6 +9,7 @@ import { trpc } from '@/lib/trpc';
 import {
   useMapActions, useActiveFloorId, useSelectedShop, useRouteVisible, useMapStore,
   useMapStore as mapStore, useUserAnchor, useRouteDestinationShopId,
+  useSearchHighlights, useSearchHighlightLabel,
 } from '@/store/map.store';
 import { FloorSelector } from './FloorSelector';
 import { SearchBar } from '@/components/search/SearchBar';
@@ -51,15 +52,16 @@ interface BuildingMapViewProps {
 }
 
 export function BuildingMapView({ buildingSlug, initialFloorId, autoRouteToShopId }: BuildingMapViewProps) {
-  const { setActiveBuilding, setActiveFloor, clearRoute, setUserAnchor, selectShop: selectShopAction, setRoute } = useMapActions();
+  const { setActiveBuilding, setActiveFloor, clearRoute, setUserAnchor, selectShop: selectShopAction, setRoute, clearSearchHighlights } = useMapActions();
   const activeFloorId = useActiveFloorId();
   const selectedShop  = useSelectedShop();
   const routeVisible  = useRouteVisible();
   const userAnchor    = useUserAnchor();
   const routeDestinationShopId = useRouteDestinationShopId();
+  const searchHighlights = useSearchHighlights();
+  const searchHighlightLabel = useSearchHighlightLabel();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
-  const [pickerDismissed, setPickerDismissed] = useState(false);
   const mapRef = useRef<maplibregl.Map | null>(null);
 
   const rotateBy = (deg: number) => {
@@ -323,15 +325,12 @@ export function BuildingMapView({ buildingSlug, initialFloorId, autoRouteToShopI
 
   const activeFloor = floors?.find((f) => f.id === activeFloorId);
 
-  // Show the picker when:
-  //  (a) first visit + ground floor + nothing dismissed yet, OR
-  //  (b) the user just tapped "Directions" but has no entrance set,
-  //      which would otherwise produce an empty route. We re-open the
-  //      picker so they can pick a real origin.
+  // Only show the entrance picker when the user taps "Directions" but
+  // has no anchor set yet. QR scan is the primary way to set the anchor;
+  // the picker is the fallback when no QR was scanned.
   const showPicker =
-    activeFloor?.floorNumber === 0 && entrances.length > 0 && !userAnchor && (
-      !pickerDismissed || routeVisible
-    );
+    routeVisible && !userAnchor &&
+    activeFloor?.floorNumber === 0 && entrances.length > 0;
 
   return (
     <div className="h-full flex overflow-hidden bg-white">
@@ -453,6 +452,23 @@ export function BuildingMapView({ buildingSlug, initialFloorId, autoRouteToShopI
           <SearchBar buildingId={building.id} />
         </div>
 
+        {/* Search-results banner — visible while highlights are painted */}
+        {searchHighlights.length > 0 && (
+          <div className="absolute top-[60px] left-1/2 -translate-x-1/2 z-10 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-ink-200 shadow-card text-[12px]">
+            <span className="w-2 h-2 rounded-full bg-primary-500 animate-pulse" />
+            <span className="text-ink-900 font-bold">{searchHighlights.length}</span>
+            <span className="text-ink-500">match{searchHighlights.length === 1 ? '' : 'es'} for</span>
+            <span className="text-ink-900 font-semibold">&ldquo;{searchHighlightLabel}&rdquo;</span>
+            <button
+              onClick={() => clearSearchHighlights()}
+              className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full hover:bg-ink-100 text-ink-400 hover:text-ink-700"
+              aria-label="Clear search highlights"
+            >
+              <X className="w-3 h-3" strokeWidth={2.5} />
+            </button>
+          </div>
+        )}
+
         {/* Map */}
         <div className="absolute inset-0 pt-[57px]">
           {activeFloorId && floorGeoJSON ? (
@@ -466,6 +482,7 @@ export function BuildingMapView({ buildingSlug, initialFloorId, autoRouteToShopI
               }
               routeCoordinates={routeCoordinates}
               escalatorMarker={escalatorMarker}
+              searchHighlights={searchHighlights}
               onMapReady={(m) => { mapRef.current = m; }}
               className="h-full w-full"
             />
@@ -496,8 +513,8 @@ export function BuildingMapView({ buildingSlug, initialFloorId, autoRouteToShopI
           <EntrancePicker
             buildingName={building.name}
             entrances={entrances}
-            onPicked={() => setPickerDismissed(true)}
-            onClose={() => setPickerDismissed(true)}
+            onPicked={() => {}}
+            onClose={() => clearRoute()}
           />
         )}
 

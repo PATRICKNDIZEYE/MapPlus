@@ -13,6 +13,24 @@ interface EntranceMarker {
   photoUrl:    string;
 }
 
+interface SearchHighlight {
+  shopId:   string;
+  category: string | null;
+}
+
+// Brand palette for category badges painted on matching shops.
+const CATEGORY_PALETTE: Record<string, { bg: string; fg: string; svg: string }> = {
+  'Fashion & Apparel':  { bg: '#EC4899', fg: '#fff', svg: '<path d="M16 6 L8 12 V20 H16 V12 Z"/><path d="M8 6 L16 12"/>' },
+  'Electronics':        { bg: '#2563EB', fg: '#fff', svg: '<rect x="5" y="7" width="14" height="10" rx="2"/><path d="M9 21h6"/><path d="M12 17v4"/>' },
+  'Food & Beverages':   { bg: '#F59E0B', fg: '#fff', svg: '<path d="M6 8h12v8a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3z"/><path d="M18 9h2a2 2 0 0 1 0 4h-2"/>' },
+  'Health & Pharmacy':  { bg: '#10B981', fg: '#fff', svg: '<path d="M12 4v16"/><path d="M4 12h16"/>' },
+  'Banking & Finance':  { bg: '#1E40AF', fg: '#fff', svg: '<path d="M4 9h16"/><path d="M5 9V6l7-3 7 3v3"/><path d="M6 9v8"/><path d="M10 9v8"/><path d="M14 9v8"/><path d="M18 9v8"/><path d="M4 19h16"/>' },
+  'Beauty & Cosmetics': { bg: '#A855F7', fg: '#fff', svg: '<path d="M12 2l2 4 4 2-4 2-2 4-2-4-4-2 4-2z"/>' },
+  'Sports & Fitness':   { bg: '#0D9488', fg: '#fff', svg: '<circle cx="12" cy="12" r="8"/><path d="M6 6l12 12"/><path d="M18 6L6 18"/>' },
+  'Entertainment':      { bg: '#DC2626', fg: '#fff', svg: '<polygon points="9 6 19 12 9 18"/>' },
+};
+const PALETTE_DEFAULT = { bg: '#475569', fg: '#fff', svg: '<circle cx="12" cy="12" r="6"/>' };
+
 interface EscalatorMarker {
   coordinates: [number, number];
   direction:   'up' | 'down';
@@ -28,6 +46,8 @@ interface MapCanvasProps {
   routeCoordinates?: [number, number][];
   userAnchorCoordinates?: [number, number];
   entrances?: EntranceMarker[];
+  /** Shops that should be painted on the floor plan with a category badge. */
+  searchHighlights?: SearchHighlight[];
   /** Floor-change point when a route spans multiple floors. */
   escalatorMarker?: EscalatorMarker | null;
   /** Fires once the map is ready — used by parent to drive rotation UI. */
@@ -99,6 +119,7 @@ export function MapCanvas({
   routeCoordinates,
   userAnchorCoordinates,
   entrances,
+  searchHighlights,
   escalatorMarker,
   onMapReady,
   className,
@@ -108,10 +129,9 @@ export function MapCanvas({
   const selectedMarkerRef = useRef<maplibregl.Marker | null>(null);
   const entranceMarkersRef = useRef<maplibregl.Marker[]>([]);
   const userMarkerRef = useRef<maplibregl.Marker | null>(null);
-  const chevronMarkersRef = useRef<maplibregl.Marker[]>([]);
-  const walkingDotRef = useRef<maplibregl.Marker | null>(null);
-  const rafRef = useRef<number | null>(null);
   const escalatorMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const searchMarkersRef = useRef<maplibregl.Marker[]>([]);
+  const unitIconMarkersRef = useRef<maplibregl.Marker[]>([]);
   const hoveredIdRef = useRef<string | number | null>(null);
   const lowEndRef = useRef<boolean>(false);
   const { selectShop } = useMapActions();
@@ -223,6 +243,49 @@ export function MapCanvas({
     fitMapToFloor(map, floorGeoJSON);
   }, [floorGeoJSON]);
 
+  // Category icon badges — one small colored pin per occupied unit. Replaced
+  // the text-label layers so the map speaks in icons, not words.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const place = () => {
+      unitIconMarkersRef.current.forEach((m) => m.remove());
+      unitIconMarkersRef.current = [];
+
+      const doc = (globalThis as unknown as { document: Document }).document;
+      for (const feature of floorGeoJSON.units.features) {
+        const props = feature.properties as {
+          shopId?: string | null;
+          category?: string | null;
+          status?: string;
+        } | undefined;
+        if (!props?.shopId || props.status !== 'occupied') continue;
+        if (feature.geometry?.type !== 'Polygon') continue;
+        const ring = feature.geometry.coordinates[0] as GeoPoint[];
+        const centroid = polygonCentroid(ring);
+        const palette = CATEGORY_PALETTE[props.category ?? ''] ?? PALETTE_DEFAULT;
+
+        const el = doc.createElement('div');
+        el.className = 'mg-unit-icon';
+        el.style.setProperty('--mg-pin-bg', palette.bg);
+        el.style.setProperty('--mg-pin-fg', palette.fg);
+        el.innerHTML = `
+          <span class="mg-unit-icon-core">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              ${palette.svg}
+            </svg>
+          </span>
+        `;
+        const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
+          .setLngLat(centroid)
+          .addTo(map);
+        unitIconMarkersRef.current.push(marker);
+      }
+    };
+    if (map.isStyleLoaded()) place();
+    else map.once('idle', place);
+  }, [floorGeoJSON]);
+
   // Camera framing + selected-unit highlight. When the user picks a shop
   // (from the sidebar, trending strip, or by tapping a unit), ease the
   // camera over its centroid, lift its block, and drop a pulse marker on
@@ -319,96 +382,6 @@ export function MapCanvas({
     else map.once('idle', apply);
   }, [routeCoordinates]);
 
-  // Animated walking dot + on-map turn chevrons. Brings the static
-  // polyline to life — a pulsing brand dot walks the route on a loop,
-  // and chevrons sit at each corner pointing toward the next segment.
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-    const raf = (globalThis as unknown as { requestAnimationFrame: typeof requestAnimationFrame }).requestAnimationFrame;
-    const caf = (globalThis as unknown as { cancelAnimationFrame:  typeof cancelAnimationFrame  }).cancelAnimationFrame;
-
-    const cleanup = () => {
-      if (rafRef.current !== null) { caf(rafRef.current); rafRef.current = null; }
-      if (walkingDotRef.current) { walkingDotRef.current.remove(); walkingDotRef.current = null; }
-      chevronMarkersRef.current.forEach((m) => m.remove());
-      chevronMarkersRef.current = [];
-    };
-    cleanup();
-
-    if (!routeCoordinates || routeCoordinates.length < 2) return;
-
-    const place = () => {
-      const doc = (globalThis as unknown as { document: Document }).document;
-
-      // Cumulative segment lengths (degrees — fine for ratio interpolation).
-      const cum: number[] = [0];
-      for (let i = 1; i < routeCoordinates.length; i++) {
-        const [x1, y1] = routeCoordinates[i - 1]!;
-        const [x2, y2] = routeCoordinates[i]!;
-        cum.push(cum[i - 1]! + Math.hypot(x2 - x1, y2 - y1));
-      }
-      const total = cum[cum.length - 1]!;
-      if (total === 0) return;
-
-      // Chevrons at every interior vertex — skip the entrance start and
-      // the destination end, both of which already have their own
-      // pulsing markers.
-      for (let i = 1; i < routeCoordinates.length - 1; i++) {
-        const at      = routeCoordinates[i]!;
-        const next    = routeCoordinates[i + 1]!;
-        const bearing = bearingFromTo(at, next);
-        const el = doc.createElement('div');
-        el.className = 'mg-route-chevron';
-        el.innerHTML = `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6,15 12,9 18,15"/></svg>`;
-        chevronMarkersRef.current.push(
-          new maplibregl.Marker({
-            element:           el,
-            anchor:            'center',
-            rotationAlignment: 'map',
-            rotation:          bearing,
-          }).setLngLat(at).addTo(map),
-        );
-      }
-
-      // Walking dot — placed at the start, animated along the polyline.
-      const dotEl = doc.createElement('div');
-      dotEl.className = 'mg-route-dot';
-      dotEl.innerHTML = `
-        <span class="mg-route-dot-ring"></span>
-        <span class="mg-route-dot-ring mg-route-dot-ring--delayed"></span>
-        <span class="mg-route-dot-core"></span>
-      `;
-      walkingDotRef.current = new maplibregl.Marker({ element: dotEl, anchor: 'center' })
-        .setLngLat(routeCoordinates[0]!)
-        .addTo(map);
-
-      const DURATION_MS = 3500; // one full pass
-      let startTs: number | null = null;
-      const step = (ts: number) => {
-        if (startTs === null) startTs = ts;
-        const elapsed = (ts - startTs) % DURATION_MS;
-        const t = elapsed / DURATION_MS;
-        const target = t * total;
-        // Find the segment that contains `target`.
-        let i = 1;
-        while (i < cum.length && cum[i]! < target) i++;
-        if (i >= cum.length) i = cum.length - 1;
-        const segLen = cum[i]! - cum[i - 1]!;
-        const frac   = segLen === 0 ? 0 : (target - cum[i - 1]!) / segLen;
-        const [x1, y1] = routeCoordinates[i - 1]!;
-        const [x2, y2] = routeCoordinates[i]!;
-        walkingDotRef.current?.setLngLat([x1 + (x2 - x1) * frac, y1 + (y2 - y1) * frac]);
-        rafRef.current = raf(step);
-      };
-      rafRef.current = raf(step);
-    };
-
-    if (map.isStyleLoaded()) place();
-    else map.once('idle', place);
-
-    return cleanup;
-  }, [routeCoordinates]);
 
   // Entrance markers (ground floor only). Big, image-backed pins so a
   // shopper standing in front of the building can spot "their" door
@@ -466,6 +439,50 @@ export function MapCanvas({
     if (map.isStyleLoaded()) place();
     else map.once('idle', place);
   }, [entrances, floorGeoJSON]);
+
+  // Search highlights — drop a colour-coded category badge on every unit
+  // polygon whose shop matches the current search. The drop pops in with
+  // a CSS animation so the user sees "ah, here are all the shoe shops".
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const place = () => {
+      searchMarkersRef.current.forEach((m) => m.remove());
+      searchMarkersRef.current = [];
+      if (!searchHighlights?.length) return;
+
+      const doc = (globalThis as unknown as { document: Document }).document;
+      const byShop = new Map(searchHighlights.map((h) => [h.shopId, h]));
+
+      for (const feature of floorGeoJSON.units.features) {
+        const props = feature.properties as { shopId?: string | null } | undefined;
+        if (!props?.shopId || !byShop.has(props.shopId)) continue;
+        if (feature.geometry?.type !== 'Polygon') continue;
+        const ring = feature.geometry.coordinates[0] as GeoPoint[];
+        const centroid = polygonCentroid(ring);
+        const hit = byShop.get(props.shopId)!;
+        const palette = CATEGORY_PALETTE[hit.category ?? ''] ?? PALETTE_DEFAULT;
+
+        const el = doc.createElement('div');
+        el.className = 'mg-search-pin';
+        el.style.setProperty('--mg-pin-bg', palette.bg);
+        el.style.setProperty('--mg-pin-fg', palette.fg);
+        el.innerHTML = `
+          <span class="mg-search-pin-core">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              ${palette.svg}
+            </svg>
+          </span>
+        `;
+        const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
+          .setLngLat(centroid)
+          .addTo(map);
+        searchMarkersRef.current.push(marker);
+      }
+    };
+    if (map.isStyleLoaded()) place();
+    else map.once('idle', place);
+  }, [searchHighlights, floorGeoJSON]);
 
   // Escalator marker — anchors a cross-floor route's transition point.
   // On the origin floor it says "↑ Level 2"; on the destination floor
@@ -870,47 +887,6 @@ function addFloorLayers(map: maplibregl.Map, data: FloorMapGeoJSON, lowEnd: bool
           ['==', ['get', 'status'], 'occupied'], 1.5,
           1,
         ],
-      },
-    });
-  }
-
-  if (!map.getLayer('units-label')) {
-    map.addLayer({
-      id: 'units-label',
-      type: 'symbol',
-      source: 'units',
-      filter: ['all', ['==', ['get', 'status'], 'occupied'], ['!=', ['get', 'shopName'], null]] as any,
-      layout: {
-        'text-field': ['coalesce', ['get', 'shopName'], ['get', 'unitCode']],
-        'text-size': 11,
-        'text-max-width': 8,
-        'text-anchor': 'center',
-        'text-font': ['Noto Sans Regular'],
-      },
-      paint: {
-        'text-color': '#0f172a',
-        'text-halo-color': '#ffffff',
-        'text-halo-width': 1.5,
-      },
-    });
-  }
-
-  if (!map.getLayer('units-code')) {
-    map.addLayer({
-      id: 'units-code',
-      type: 'symbol',
-      source: 'units',
-      filter: ['==', ['get', 'status'], 'vacant'],
-      layout: {
-        'text-field': ['get', 'unitCode'],
-        'text-size': 9,
-        'text-anchor': 'center',
-        'text-font': ['Noto Sans Regular'],
-      },
-      paint: {
-        'text-color': '#94a3b8',
-        'text-halo-color': '#ffffff',
-        'text-halo-width': 1,
       },
     });
   }

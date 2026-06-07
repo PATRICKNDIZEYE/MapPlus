@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
 import { SiteFooter } from './SiteFooter';
 import { Logo } from '@/components/brand/Logo';
 
@@ -23,13 +22,6 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
               </Link>
             ))}
           </nav>
-
-          <div className="flex items-center gap-2">
-            <Link href="/login" className="btn-secondary text-xs py-1.5">Sign in</Link>
-            <Link href="/map/chic-kigali" className="btn-primary text-xs py-1.5">
-              Live map <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
         </div>
       </header>
 
