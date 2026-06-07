@@ -556,6 +556,15 @@ export function MapCanvas({
     else map.once('idle', place);
   }, [userAnchorCoordinates]);
 
+  // Hide all unit-icon badges while a search is active — only the animated
+  // search-pin result badges should be visible then, so the map is clean.
+  useEffect(() => {
+    const searchActive = (searchHighlights?.length ?? 0) > 0;
+    unitIconMarkersRef.current.forEach((m) => {
+      (m.getElement() as HTMLElement).style.display = searchActive ? 'none' : '';
+    });
+  }, [searchHighlights]);
+
   return <div ref={containerRef} className={className ?? 'h-full w-full'} />;
 }
 
